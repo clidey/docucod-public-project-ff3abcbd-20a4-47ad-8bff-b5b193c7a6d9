@@ -1,0 +1,202 @@
+---
+title: "Visual Studio or Build Tools cannot be found—how do I fix this?"
+description: "Guides users through resolving missing or misconfigured Visual Studio issues, including using PowerShell modules to improve detection and the role of the VS installation path, registry, and required workloads."
+---
+
+# Visual Studio or Build Tools Cannot Be Found — How Do I Fix This?
+
+This guide helps you resolve issues when node-gyp cannot locate a suitable Visual Studio or Build Tools installation for compiling native Node.js addons on Windows. It walks you through why detection may fail, how node-gyp finds Visual Studio, and practical steps to improve detection and fix configuration problems.
+
+---
+
+## Why Can't node-gyp Find Visual Studio or Build Tools?
+
+When building native modules on Windows, node-gyp depends on a working C++ compiler and build environment, typically provided by Visual Studio or the standalone Build Tools. Problems locating these tools happen because:
+
+- The Visual Studio installation is missing the required workloads or components, especially "Desktop development with C++."
+- The installation path or environment variables are misconfigured or absent.
+- node-gyp's detection logic does not find the MSBuild executable or necessary SDKs, either due to version mismatches or incomplete installs.
+- Running in an environment like a VS Command Prompt that targets a different Visual Studio version or path than node-gyp expects.
+
+Understanding the detection process can help you identify and fix these issues.
+
+---
+
+## How node-gyp Detects Visual Studio
+
+node-gyp uses multiple methods to locate a valid Visual Studio or Build Tools installation:
+
+1. **Environment Variables Inspection:**
+   - It checks if `VCINSTALLDIR` is set, often present in a Visual Studio Developer Command Prompt, to use that specific environment.
+
+2. **Version or Path Overrides:**
+   - You can specify the Visual Studio version or path using the `--msvs_version` command line flag, npm configuration, or environment variables like `GYP_MSVS_VERSION` and `GYP_MSVS_OVERRIDE_PATH`. 
+
+3. **Registry Lookup and PowerShell Modules:**
+   - node-gyp queries the Windows Registry for installed VS versions and uses a PowerShell module `VSSetup` to enumerate Visual Studio 2017, 2019, and 2022 instances.
+   - It reads installed workloads and components to verify the presence of "Visual Studio C++ core features," Windows SDKs, and MSBuild tools.
+
+4. **SDK and Toolset Verification:**
+   - node-gyp confirms that the installation has an appropriate VC++ toolset (`v141`, `v142`, or `v143` for VS 2017, 2019, and 2022 respectively).
+   - Checks for an installed Windows SDK (e.g., 10.0.xxxxx). 
+
+5. **MSBuild Path Validation:**
+   - It locates `MSBuild.exe` within the Visual Studio installation, including support for ARM64 paths on ARM64 machines.
+
+If any of these criteria are missing or incomplete, node-gyp will fail to detect Visual Studio and throw an error.
+
+---
+
+## Practical Steps to Fix Visual Studio Detection Issues
+
+Follow these actionable steps to ensure node-gyp can locate and use Visual Studio correctly.
+
+### 1. Confirm Visual Studio Installation
+
+- Verify you have installed **Visual Studio 2017, 2019, or 2022**, or the corresponding **Build Tools** edition.
+- Make sure the **"Desktop development with C++" workload** is installed. This is critical and includes:
+  - VC++ compiler and toolsets
+  - MSBuild components
+  - Windows SDK (10.x or 11.x)
+
+> You can modify your Visual Studio setup via the Visual Studio Installer to add workloads or components.
+
+### 2. Check Environment Variables
+
+- If building inside a **Visual Studio Developer Command Prompt**, ensure the environment variables are correctly set.
+- Use the following for quick validation:
+  ```powershell
+  echo $Env:VCINSTALLDIR
+  echo $Env:VSCMD_VER
+  echo $Env:WindowsSDKVersion
+  ```
+- If missing or incorrect, **do not launch node-gyp from a generic shell**; use a properly configured VS Command Prompt, or manually set environment variables.
+
+### 3. Use Command Line Overrides
+
+- Specify the Visual Studio version explicitly when running commands:
+  ```bash
+  node-gyp rebuild --msvs_version=2019
+  ```
+- To point to a specific installation path, set the environment variables before your build:
+  ```bash
+  set GYP_MSVS_VERSION=2019
+  set GYP_MSVS_OVERRIDE_PATH="C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools"
+  node-gyp rebuild
+  ```
+
+### 4. Verify MSBuild Executable Presence
+
+- Confirm that `MSBuild.exe` exists in the path under your Visual Studio installation, e.g.:
+  ```
+  C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe
+  ```
+- For ARM64 machines, also check the `arm64` folder under:
+  ```
+  ...\MSBuild\Current\Bin\arm64\MSBuild.exe
+  ```
+
+### 5. Ensure Windows SDK Is Installed
+
+- Visual Studio should include a Windows SDK, for example `10.0.19041.0`. Without this SDK, native compilation will fail.
+- You can verify SDK installation through the Visual Studio Installer or check folders:
+  ```
+  C:\Program Files (x86)\Windows Kits\10\
+  ```
+
+### 6. Update or Repair Visual Studio
+
+- Run the Visual Studio Installer and choose to **Repair** your installation if you suspect corruption or partial installs.
+- Make sure you have updated to the latest Visual Studio version and Build Tools.
+
+### 7. Install or Update `VSSetup` PowerShell Module
+
+- node-gyp relies on the `VSSetup` PowerShell module to query newer Visual Studio instances.
+- Verify module availability:
+  ```powershell
+  Get-Module -ListAvailable -Name VSSetup
+  ```
+- Install or update via:
+  ```powershell
+  Install-Module VSSetup -Scope CurrentUser
+  ```
+
+### 8. Use Verbose Logging to Diagnose
+
+- Run node-gyp with verbose or debug logging to get detailed info on the detection process:
+  ```bash
+  node-gyp rebuild --verbose
+  ```
+- Review logs for missing workloads, SDKs, or mismatches in version or path.
+
+---
+
+## Common Scenarios and Solutions
+
+<AccordionGroup title="Visual Studio Detection FAQ">
+<Accordion title="The error message says 'Could not find any Visual Studio installation to use'. What should I do?">
+Ensure you have installed Visual Studio 2017 or newer with the "Desktop development with C++" workload. Verify the MSBuild executable and Windows SDK presence. Specify the version explicitly with `--msvs_version`. Use a proper VS Developer Command Prompt or set environment variables `GYP_MSVS_VERSION` and `GYP_MSVS_OVERRIDE_PATH`.
+</Accordion>
+<Accordion title="I'm on an ARM64 Windows device. How do I make sure node-gyp works correctly?">
+Node-gyp supports ARM64 builds with Visual Studio 2022 and newer, detecting ARM64 MSBuild executables. Verify that the ARM64 toolset and SDK components are installed in Visual Studio. On ARM64, node-gyp prioritizes the ARM64 MSBuild path.
+</Accordion>
+<Accordion title="What if I have multiple Visual Studio versions installed?">
+Node-gyp selects the newest suitable version by default. You can override the selection with `--msvs_version` or environment variables to force a specific version or path.
+
+If you run in a VS Developer Command Prompt, make sure the environment matches your chosen version.
+</Accordion>
+<Accordion title="My VS Command Prompt reports an installation path that is unusable by node-gyp. How to fix?">
+This occurs if your VS Command Prompt points to a Visual Studio instance missing required workloads or SDKs. Either install missing components or run node-gyp outside this prompt and specify a different installation path/version.
+</Accordion>
+<Accordion title="Is there a way to check what Visual Studio versions node-gyp detects?">
+Run node-gyp commands with the `--verbose` or `--loglevel silly` flags to see detailed logs of detected Visual Studio instances, their paths, detected workloads, and SDK versions.
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Example: Overriding Visual Studio Version and Path in Environment
+
+Set environment variables in PowerShell or CMD to force detection:
+
+```powershell
+$Env:GYP_MSVS_VERSION = "2019"
+$Env:GYP_MSVS_OVERRIDE_PATH = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools"
+node-gyp rebuild
+```
+
+or in CMD:
+
+```cmd
+set GYP_MSVS_VERSION=2019
+set GYP_MSVS_OVERRIDE_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools
+node-gyp rebuild
+```
+
+This approach forces node-gyp to use the specified Visual Studio installation regardless of other detected environments.
+
+---
+
+## Troubleshooting Checklist
+
+- [ ] Verify Visual Studio or Build Tools installation exists
+- [ ] Confirm "Desktop development with C++" workload is installed
+- [ ] Check for MSBuild.exe presence in expected folders
+- [ ] Confirm Windows SDK is installed
+- [ ] Use Visual Studio Developer Command Prompt or set env variables
+- [ ] Run with verbose logging to locate detection failures
+- [ ] Repair or update Visual Studio installation if needed
+
+---
+
+## Additional Resources
+
+- [node-gyp Windows Visual Studio Setup Guide](https://github.com/nodejs/node-gyp/blob/main/docs/windows-visual-studio-setup.md)
+- [Visual Studio Workloads and Components](https://learn.microsoft.com/en-us/visualstudio/install/workload-and-component-ids)
+- [Visual Studio Installer](https://visualstudio.microsoft.com/downloads/)
+- [PowerShell VSSetup Module](https://learn.microsoft.com/en-us/visualstudio/install/use-vssetup-module)
+- [node-gyp Python Configuration Guide](https://github.com/nodejs/node-gyp/blob/main/docs/python-setup.md)
+
+---
+
+By carefully verifying your Visual Studio installation, environment variables, and workloads, and by using node-gyp's overrides and verbose logging, you can resolve most Visual Studio detection issues and ensure successful native addon compilation on Windows.
