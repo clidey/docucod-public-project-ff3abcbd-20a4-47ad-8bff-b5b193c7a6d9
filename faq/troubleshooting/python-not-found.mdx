@@ -1,0 +1,221 @@
+---
+title: "node-gyp can't find a suitable Python executable—what should I do?"
+description: "Provides a clear checklist for resolving Python detection errors, clarifies environment variable overrides, and directs users to diagnostic commands. Addresses path issues and known Windows and Unix complications."
+---
+
+# FAQ: node-gyp Can't Find a Suitable Python Executable—What Should I Do?
+
+This page provides a clear, actionable checklist to diagnose and fix issues when **node-gyp cannot detect or use a compatible Python executable** during native addon builds. It clarifies environment variable usage for overrides, explains common pitfalls on Windows and Unix platforms, and guides you through diagnostic commands to identify the problem quickly.
+
+---
+
+## 1. Why is node-gyp having trouble finding Python?
+
+`node-gyp` requires Python (version 3.6 or newer) installed on your system to generate native build files. It attempts to locate Python by scanning multiple possible locations based on your settings, environment variables, and platform conventions. Failures usually occur due to:
+
+- Python missing or not installed
+- Python version older than 3.6
+- Python executable not in your system's `PATH`
+- Misconfigured environment variables that override Python selection
+- Restrictions or permission issues on Windows blocking detection
+
+---
+
+## 2. How does node-gyp find Python?
+
+`node-gyp` tries the following methods in order:
+
+1. Check if the environment variable `NODE_GYP_FORCE_PYTHON` is set. If so, **this path is forced and no further detection happens**.
+2. Check if Python is explicitly specified using the `--python` flag or npm config `python` key.
+3. Check the `PYTHON` environment variable.
+4. On Windows, try the `py.exe` launcher requesting Python 3.
+5. Try commands `python3` and `python` in your system `PATH`.
+6. On Windows, try default Python installation paths for common versions (e.g., Python 3.11, 3.10, 3.9, 3.8).
+
+At each stage, node-gyp verifies if the executable:
+- Can be run
+- Returns a valid Python version
+- Has a version compatible with `>=3.6.0`
+
+If all attempts fail, node-gyp reports that no suitable Python was found.
+
+---
+
+## 3. Checklist to Resolve Python Detection Issues
+
+Follow these steps to ensure `node-gyp` can find a compatible Python executable:
+
+### Step 1: Verify Python Installation and Version
+
+- Run `python --version` and/or `python3 --version` in your terminal or command prompt.
+- Ensure that one of them reports Python 3.6 or newer.
+- If Python is not found or is below 3.6, install or update Python:
+  - Download from [https://www.python.org/downloads/](https://www.python.org/downloads/)
+  - On Windows, prefer the Microsoft Store Python or official installer.
+
+### Step 2: Set Explicit Python Path if Needed
+
+If you have multiple Python versions or non-standard install location, explicitly tell node-gyp which Python to use:
+
+- Use command-line flag:
+
+   ```bash
+   node-gyp <command> --python /full/path/to/python
+   ```
+
+- Or set environment variables:
+
+  - **Unix/macOS:**
+    ```bash
+    export PYTHON=/full/path/to/python
+    export npm_config_python=/full/path/to/python
+    ```
+
+  - **Windows CMD:**
+    ```dos
+    set PYTHON=C:\Path\To\python.exe
+    set npm_config_python=C:\Path\To\python.exe
+    ```
+
+  - **Windows PowerShell:**
+
+    ```powershell
+    $Env:PYTHON = "C:\Path\To\python.exe"
+    $Env:npm_config_python = "C:\Path\To\python.exe"
+    ```
+
+- Alternatively, set `NODE_GYP_FORCE_PYTHON` to enforce usage but be aware this disables fallback scanning.
+
+### Step 3: Check Your Path and Permissions
+
+- Make sure the Python executable is in your system `PATH`.
+- On Windows, run your command prompt or PowerShell as Administrator if possible.
+- On Windows, ensure that the `py.exe` launcher exists and can find Python 3 by running:
+
+  ```powershell
+  py -3 --version
+  ```
+
+- If `py.exe` is not found, you may want to install the Python launcher separately.
+
+### Step 4: Confirm No Conflicting Variables or Configurations
+
+- Check that no legacy or conflicting environment variables are set (e.g., `PYTHONPATH` might interfere with execution).
+- Be aware that npm config variables (`npm_config_python` or `npm_package_config_node_gyp_python`) can affect which Python is used when running via npm.
+
+### Step 5: Run Diagnostic Command
+
+- To debug, run:
+
+  ```bash
+  node-gyp --python /path/to/python configure --verbose
+  ```
+
+- Or to see detailed detection logs, run node-gyp with the `--verbose` or `--loglevel=silly` flag.
+
+These verbose logs will show each check made and the results, helping identify where the detection breaks down.
+
+---
+
+## 4. Platform-Specific Notes
+
+### Windows
+
+- Python installed from the Microsoft Store or official installer usually works best.
+- The `py.exe` launcher (Python launcher) is commonly used by node-gyp to find Python 3.
+- If detection fails, verify:
+  - The `py` launcher executable is in your `PATH`.
+  - The relevant Python 3 version is installed and registered with the launcher.
+  - Running `py -3` succeeds.
+- Run your console with elevated privileges if facing permission issues.
+
+### Unix/macOS
+
+- Ensure that `python3` points to Python 3.6+.
+- `python` might point to Python 2 by default on some systems.
+- You can use alternatives systems (like `update-alternatives` on Linux) to configure your Python commands.
+
+---
+
+## 5. Common Error Patterns & Solutions
+
+### Error: Could not find any Python installation to use
+
+**Cause:** No compatible Python found in any searched locations.
+
+**Solution:** Install Python 3.6 or newer and set the correct PATH or PYTHON variables.
+
+### Error: Found unsupported Python version (e.g., 2.7 or 3.5)
+
+**Cause:** Python version is too old.
+
+**Solution:** Upgrade Python to at least 3.6.
+
+### Python executable path not in PATH
+
+**Cause:** The Python binary is not discoverable via system search paths.
+
+**Solution:** Add the Python installation directory to your system's PATH or set explicit paths using `--python` or environment variables.
+
+### Permission denied or command fails on Windows
+
+**Cause:** Console lacks sufficient permissions or Python launcher is blocked.
+
+**Solution:** Run terminal as Administrator and ensure Python and `py.exe` are properly installed.
+
+---
+
+## 6. Summary of Python Environment Variable Overrides
+
+| Variable               | Purpose                                       | Effect                              |
+|------------------------|-----------------------------------------------|-----------------------------------|
+| `NODE_GYP_FORCE_PYTHON` | Force node-gyp to use this Python path       | No fallback scanning if set        |
+| `--python` flag (CLI)   | Command line override for Python executable   | Preferred over env vars if set     |
+| `PYTHON`                | Environment variable for Python executable    | Used if CLI `--python` not set     |
+| `npm_config_python`     | npm config variable for Python path           | Used when running via npm          |
+
+---
+
+## 7. Additional Help and References
+
+- See the [Configuring the Python Dependency](https://github.com/nodejs/node-gyp/blob/main/docs/setup-prerequisites-installation/python-setup.md) guide for detailed platform-specific instructions.
+- For Visual Studio integration on Windows, visit the [Windows: Visual Studio Setup](https://github.com/nodejs/node-gyp/blob/main/docs/setup-prerequisites-installation/windows-visual-studio-setup.md) page.
+- Refer to [Common Errors and How to Fix Them](https://github.com/nodejs/node-gyp/blob/main/docs/troubleshooting-common-issues/common-errors-and-solutions.md) for troubleshooting build errors beyond Python detection issues.
+
+---
+
+## 8. Example: Setting Python Path Explicitly
+
+### Unix/Linux/macOS
+
+```bash
+export PYTHON=/usr/local/bin/python3
+node-gyp configure
+```
+
+### Windows PowerShell
+
+```powershell
+$Env:PYTHON = "C:\Python39\python.exe"
+node-gyp configure
+```
+
+### Using npm config
+
+```bash
+npm config set python /usr/local/bin/python3
+npm install
+```
+
+---
+
+This FAQ ensures you have a clear path to diagnosing and resolving Python detection problems, guiding you confidently to restore your node-gyp build workflow.
+
+---
+
+## See Also
+
+- [What tools do I need to use node-gyp?](https://github.com/nodejs/node-gyp/blob/main/docs/faq/common-questions/required-tools.md)
+- [How node-gyp integrates with your environment](https://github.com/nodejs/node-gyp/blob/main/docs/overview/integration-and-ecosystem/integration-with-environments.md)
+- [Configuring the Python Dependency](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/setup-prerequisites-installation/python-setup.md)
+- [Common Errors and How to Fix Them](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/troubleshooting-common-issues/common-errors-and-solutions.md)

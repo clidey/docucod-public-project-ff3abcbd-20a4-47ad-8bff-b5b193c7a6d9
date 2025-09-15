@@ -1,0 +1,189 @@
+---
+title: "Essential Terminology"
+description: "Master the core vocabulary: native addon, binding.gyp, build directory, headers, configure/build/rebuild commands, and related build tools (GYP, Ninja, MSBuild, Xcode). Each term is defined simply, with links to where it manifests in a real workflow or config file."
+---
+
+# Essential Terminology
+
+Master the core vocabulary critical to effectively using `node-gyp` and understanding its build workflow. This glossary defines foundational terms such as *native addon*, *binding.gyp*, *build directory*, header files, and essential commands like *configure*, *build*, and *rebuild*. It also introduces key external build tools involved in the process, including *GYP*, *Ninja*, *MSBuild*, and *Xcode*. Each term is explained simply, with references to where it fits into the typical addon development lifecycle or configuration files.
+
+---
+
+## Native Addon
+
+A **native addon** is a dynamically loadable module written in C or C++ that extends Node.js with functionality implemented in native code. Native addons allow you to leverage system libraries or optimize performance-critical paths by compiling code that runs directly on the host architecture.
+
+**Why It Matters:**
+- Enables integration of fast, low-level code with JavaScript.
+- Essential for performance-sensitive or platform-specific features.
+
+**In Practice:** When building a native addon, you write `.cc` or `.cpp` source files that `node-gyp` compiles into a `.node` binary.
+
+---
+
+## binding.gyp
+
+This JSON-like configuration file describes how to build your native addon. The file contains a structured dictionary specifying targets, source files, include paths, compiler flags, and platform-specific configurations.
+
+Key Points:
+- Located at the root of your addon project.
+- Defines one or more `targets`, each with properties such as `target_name`, `sources`, and build settings.
+
+**Example skeleton:**
+
+```json
+{
+  "targets": [
+    {
+      "target_name": "myaddon",
+      "sources": [ "src/myaddon.cc" ]
+    }
+  ]
+}
+```
+
+Binding.gyp files are processed by `node-gyp` during the `configure` step to generate platform-specific build files.
+
+[See detailed examples in the binding.gyp section](/overview/integration-and-ecosystem/addon-configs-and-examples)
+
+---
+
+## Build Directory
+
+The **build directory** is the workspace folder (usually named `build/`) where intermediate and final build artifacts reside after you run `node-gyp` commands.
+
+- Contains generated project files such as Makefiles (Unix), `.vcxproj` files (Windows), or Xcode projects (macOS).
+- Holds the compiled native addon binaries, typically under subfolders like `Debug/` or `Release/`.
+
+**User Tip:** Don’t manually modify files in the build directory; use `node-gyp clean` to clear this folder and start fresh if builds fail.
+
+---
+
+## Headers
+
+**Header files** provide the API definitions and declarations your native addon depends on. These include:
+
+- **Node.js headers:** Necessary for interacting with the Node.js core API.
+- **V8 JavaScript engine headers:** Used when working with V8 internals.
+
+`node-gyp` downloads and manages the correct versions of these header files for the target Node.js runtime.
+
+**Typical Location:** Headers are installed under the build directory or user cache depending on configuration and platform.
+
+**Practical Note:** Missing or incompatible header files are a frequent cause of build failures.
+
+---
+
+## Configure Command
+
+`node-gyp configure` generates the project build files needed for your platform using the `binding.gyp` file.
+
+**Key Outcomes:**
+- Creates Makefiles on Linux and macOS, Visual Studio project files on Windows, or Xcode projects on macOS.
+- Resolves target architecture, Python configuration, and platform-specific flags.
+
+**User Workflow:** Run `configure` first to prepare your build system before compiling.
+
+---
+
+## Build Command
+
+`node-gyp build` compiles the native addon sources into binary format using the build files produced in the configure step.
+
+- Invokes platform-native build tools automatically: `make` on Unix, `msbuild` on Windows, or `xcodebuild` on macOS.
+- Produces a `.node` file that can be `require()`d from Node.js.
+
+**Success Indicator:** A compiled addon binary in `build/Release/` (or `build/Debug/` if debug mode is used).
+
+---
+
+## Rebuild Command
+
+`node-gyp rebuild` is a convenient command that performs a `clean`, `configure`, and `build` sequentially.
+
+Use this when your build environment or configuration changes and you need a full fresh compilation.
+
+---
+
+## GYP (Generate Your Projects)
+
+**GYP** is the meta-build system embedded within `node-gyp`.
+
+- It reads your `binding.gyp` file and generates native build files for the current platform.
+- Supports multiple build targets like Visual Studio, Makefiles, Ninja, and Xcode.
+
+**Why GYP?** It unifies the cross-platform build experience so you don’t write multiple project files manually.
+
+For more, see [GYP User Documentation](https://gyp.gsrc.io/docs/UserDocumentation.md) and [Input Format Reference](https://gyp.gsrc.io/docs/InputFormatReference.md).
+
+---
+
+## Ninja
+
+**Ninja** is a small, fast build system commonly used on Unix and Linux.
+
+- If installed and configured, `node-gyp` may use Ninja to speed up build times as it is more efficient than traditional `make`.
+
+- Ninja files are generated by GYP when selected.
+
+**User Tip:** Installing Ninja can improve incremental build speeds, especially for larger projects.
+
+---
+
+## MSBuild
+
+On Windows, **MSBuild** is the native build engine used for compiling Visual Studio project files.
+
+- `node-gyp` uses MSBuild to drive the build process when generating `.vcxproj` files.
+- Allows integration with Visual Studio and uses the Microsoft C++ compiler toolchain.
+
+**Note:** Visual Studio or Build Tools must be installed and appropriately configured for MSBuild to work.
+
+---
+
+## Xcode
+
+On macOS, **Xcode** is the native IDE and build system.
+
+- When building on macOS, `node-gyp` generates Xcode projects with the `.xcodeproj` extension.
+- Builds are then executed through Xcode’s `xcodebuild` command-line tool.
+
+**Note:** Install Xcode or at least the Command Line Tools to ensure `node-gyp` builds successfully on macOS.
+
+---
+
+## How These Terms Fit Together in a Typical Workflow
+
+1. **Prepare** your addon source files and write a `binding.gyp` file describing your build targets.
+2. Run `node-gyp configure` to generate native project files using **GYP** based on your `binding.gyp`.
+3. Run `node-gyp build` to compile sources via platform-native tools: **make**, **MSBuild**, **xcodebuild**, or **Ninja** if configured.
+4. The compiled **native addon** binary appears in the **build directory** ready for Node.js.
+5. Use `node-gyp rebuild` to clean and fully recompile when necessary.
+
+---
+
+## Troubleshooting Tips
+
+- Missing or incompatible Python, compiler toolchains, or headers are common blockers. Refer to setup guides for your OS.
+- Ensure `binding.gyp` syntax is valid and paths are correct; invalid configs cause failures at `configure` time.
+- If your environment has multiple Python or Python versions, explicitly specify Python path with `--python`.
+- Use `node-gyp clean` before rebuilding if you encounter mysterious build artifacts.
+- Check platform-specific build tools:
+  - Windows: Visual Studio Build Tools and MSBuild availability
+  - macOS: Xcode Command Line Tools installation
+  - Linux: GCC/Make toolchain presence
+
+For general solutions, see [Common Errors and How to Fix Them](/getting-started/troubleshooting-common-issues/common-errors-and-solutions).
+
+---
+
+## References and Links
+
+- [binding.gyp File Examples](docs/binding.gyp-files-in-the-wild.md)
+- [How node-gyp Works: Architecture & Workflow](/overview/core-concepts-and-architecture/component-architecture)
+- [Supported Development Workflows](/overview/core-concepts-and-architecture/supported-workflows)
+- [Setup & Installation Guides](/getting-started/setup-prerequisites-installation/prerequisites-system-requirements)
+- [Commands Overview](README.md#commands)
+
+
+---

@@ -1,0 +1,133 @@
+---
+title: "What Is node-gyp?"
+description: "node-gyp is a cross-platform command-line tool for compiling native addon modules for Node.js. It brings consistent, universal build workflows to Node.js developers requiring optimized native code, making it an industry standard for bridging JavaScript and system-level performance."
+---
+
+# What Is node-gyp?
+
+## Unlocking Native Power for Node.js Addons
+
+**node-gyp** is the industry-standard, cross-platform command-line tool designed specifically to compile native addon modules for Node.js. It seamlessly bridges the gap between JavaScript and high-performance native code by automating and standardizing complex build workflows across diverse operating systems.
+
+Through node-gyp, developers gain a consistent, dependable build environment that ensures native addons integrate smoothly into any Node.js project — whether on Windows, macOS, or Linux.
+
+### Why Use node-gyp?
+- **Cross-Platform Consistency:** Use identical commands and workflows on any supported platform to compile native addons.
+- **Version Targeting:** Effortlessly build against different Node.js versions and runtimes, such as Electron, with precise control over header files.
+- **Robust Build Automation:** node-gyp generates native project files or Makefiles to compile your addons, saving you from handling platform-specific build intricacies manually.
+- **Standardized Workflow:** Eliminates the guesswork with a unified command set including `configure`, `build`, `clean`, and `rebuild`.
+
+### Who Benefits From node-gyp?
+Native Node.js addon developers, performance-sensitive application teams, and anyone needing access to system-level capabilities from JavaScript will find node-gyp indispensable. It enables optimized native extensions, unlocking powerful functionality while maintaining easy integration.
+
+---
+
+## What Exactly Is node-gyp?
+
+node-gyp is a command-line utility built on Node.js that automates the generation and execution of build commands for native addons. These addons are binary modules written in C or C++ that extend Node.js with functionality requiring direct system-level access or performance beyond what JavaScript alone can deliver.
+
+At its core, node-gyp leverages **gyp-next**, a meta-build system originally developed for Chromium, to produce native project or build files tailored to the user’s platform:
+
+- On Windows, it generates MS Visual Studio project files.
+- On Unix-like OSes (Linux, macOS), it generates Makefiles or Ninja build files.
+
+This abstraction removes the burden of manually configuring and writing build scripts across diverse environments, providing a uniform developer experience for compiling native code.
+
+### Solving the Native Build Challenge
+
+Before node-gyp, developers faced a fragmented landscape of manual steps, platform-specific build tools, and complex configurations. node-gyp simplifies building native addons by:
+
+- Automatically downloading appropriate Node.js header files for the target runtime version if not already present.
+- Generating platform-appropriate build files based on the `binding.gyp` configuration.
+- Running the actual compilation steps seamlessly through platform-native tools like `make` or `msbuild`.
+
+### What Makes node-gyp Unique?
+
+- **Comprehensive Support:** Works with all current and LTS Node.js versions plus allows targeting third-party runtimes.
+- **Automatic Environment Handling:** Detects and configures required Python versions and native build tools for your OS.
+- **Robust Configuration Management:** Supports flexible options like custom Node.js header directories, dist URLs, cross-architecture builds, and more.
+
+## How node-gyp Works — High-Level Overview
+
+When you run `node-gyp configure`, the tool:
+
+1. **Detects and Prepares Dependencies:**
+   - Locates or downloads correct Node.js headers matching your target version.
+   - Finds Python and required platform-specific build tools (Visual Studio on Windows, `make` on Unix).
+
+2. **Generates Build Files:**
+   - Uses the `binding.gyp` configuration file to produce project or Makefiles compatible with your platform.
+
+3. **Builds the Addon:**
+   - Subsequently, running `node-gyp build` invokes whichever native build system is appropriate to compile your native addon.
+
+The result is a compiled `.node` file in the build output directory ready for `require()` in your Node.js application.
+
+### Typical User Flow
+
+```bash
+cd my_native_addon
+node-gyp configure
+node-gyp build
+```
+
+This workflow handles the complex task of compiling C++ extensions in a transparent and reliable manner.
+
+## Real-World Example: Building a Native Addon
+
+Imagine you have a performance-critical Node.js module `myaddon` written in C++ located in `src/myaddon.cc`. Your `binding.gyp` file includes:
+
+```json
+{
+  "targets": [
+    {
+      "target_name": "myaddon",
+      "sources": [ "src/myaddon.cc" ]
+    }
+  ]
+}
+```
+
+Running `node-gyp configure` generates the appropriate build files for your OS. Then, `node-gyp build` runs the compiler to produce the addon binary under `build/Release/` or `build/Debug/`.
+
+This process abstracts away all native build tool intricacies, letting you focus on writing native code rather than build plumbing.
+
+---
+
+## Key Benefits and Why You Should Care
+
+- **Simplifies Native Extension Development:** Removes the platform- and version-specific build complexity.
+- **Speeds Up Development:** Streamlined commands and automated dependency management reduce errors and save time.
+- **Ensures Compatibility:** Manages correct header versions for your target Node.js or runtime, preventing build failures.
+- **Supports Advanced Scenarios:** Cross-compiling, targeting specific Node.js versions or third-party runtimes like Electron is straightforward.
+
+Without node-gyp, setting up a reliable native build environment can be tedious and error-prone, hurting productivity and increasing frustration.
+
+---
+
+## Getting Started Preview
+
+Ready to harness native code performance in your Node.js projects? Here's what to do next:
+
+1. Ensure that you have the prerequisites installed (Python, appropriate C/C++ build tools for your OS).
+2. Create a `binding.gyp` file describing your addon module.
+3. Use the commands:
+   ```bash
+   node-gyp configure
+   node-gyp build
+   ```
+4. Load your compiled addon in Node.js and enjoy optimized native functionality.
+
+Explore the [Getting Started](../getting-started/setup-prerequisites-installation/prerequisites-system-requirements) section for detailed setup instructions.
+
+---
+
+## Further Reading
+
+- [Key Features at a Glance](/overview/introduction-and-value/core-features-quick-overview)
+- [How node-gyp Works: Architecture & Workflow](/overview/core-concepts-and-architecture/component-architecture)
+- [Creating Your binding.gyp File](/getting-started/first-build-validation/creating-binding-gyp)
+
+---
+
+Unlock the power of native addons while enjoying a simple, universal build experience thanks to node-gyp — your gateway to seamless native integration with Node.js.

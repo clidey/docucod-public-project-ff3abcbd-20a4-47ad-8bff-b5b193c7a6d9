@@ -1,0 +1,174 @@
+---
+title: "Validating Your Setup"
+description: "Quickly validate your installation and build by checking expected output files, requiring your new bindings in Node.js, and running simple tests. Ensures users can confirm a successful initial setup."
+---
+
+# Validating Your Setup
+
+Quickly validate your installation and build by checking expected output files, requiring your new bindings in Node.js, and running simple tests. This ensures you confirm a successful initial setup and readiness for native addon development.
+
+---
+
+## 1. Confirm Build Output Exists
+
+After successfully running your first build (`node-gyp configure` followed by `node-gyp build`), the compiled native addon should appear as a `.node` file within the `build` directory. This is the primary artifact that Node.js will use.
+
+### Steps to Verify:
+
+1. Navigate to your project directory.
+2. Locate the compiled addon in one of these typical paths:
+   - For Release builds: `build/Release/` folder
+   - For Debug builds: `build/Debug/` folder
+
+```bash
+# For Release build
+ls build/Release/*.node
+
+# For Debug build
+ls build/Debug/*.node
+```
+
+3. Confirm the `.node` file exists and has a non-zero file size.
+
+> <Check>
+> If you don’t see a `.node` file, re-check your build steps and review any error messages.
+> </Check>
+
+---
+
+## 2. Require the Binding in Node.js
+
+Testing whether your native addon loads correctly in Node.js confirms the build’s integrity and runtime compatibility.
+
+### Step-by-Step Validation:
+
+1. Open a terminal or command prompt.
+2. Start the Node.js REPL by typing:
+
+```bash
+node
+```
+
+3. At the prompt, load your compiled addon by requiring it via relative path. For example:
+
+```js
+// Adjust the path and module name as applicable
+const myAddon = require('./build/Release/your-addon-name.node')
+console.log('Addon loaded:', typeof myAddon)
+```
+
+4. If the module loads without errors and `typeof myAddon` returns `object` (or as expected), the setup is valid.
+
+> <Tip>
+> Replace `your-addon-name` with the exact filename of your `.node` file.
+> </Tip>
+
+> <Warning>
+> If you encounter errors like "module not found" or "invalid ELF header," verify your build environment, platform compatibility, and Node.js version alignment.
+> </Warning>
+
+---
+
+## 3. Run Simple Functionality Tests
+
+Running basic tests helps verify not just loading, but correctness of the addon’s integration.
+
+### Example Test Workflow:
+
+1. If you wrote your addon with some exported functions, invoke them to confirm they operate as expected.
+
+```js
+// Example assuming your addon exports a function named `hello`
+const result = myAddon.hello()
+console.log('Function output:', result)
+```
+
+2. Validate outputs against expected results.
+
+3. If no test functions exist, consider adding a simple stub function in your native code for testability.
+
+---
+
+## 4. Inspect Log and Install Files
+
+Review key installation artifacts to further confirm installation integrity:
+
+- **`installVersion` File:** Located under your `node-gyp` development directory (commonly `~/.node-gyp/<node-version>/installVersion`). The contents should match the installed version number (e.g., `11\n`).
+
+- **Header files:** Under `include/node/` verify presence of header files like `node.h`, `common.gypi`, and version header `node_version.h`.
+
+- Use shell commands:
+
+```bash
+cat ~/.node-gyp/$(node -v | sed 's/v//')/installVersion
+ls ~/.node-gyp/$(node -v | sed 's/v//')/include/node
+```
+
+> <Check>
+> Missing or mismatched installVersion files can indicate corrupt or partial installation, requiring a manual re-install.
+> </Check>
+
+---
+
+## 5. Troubleshooting Common Validation Issues
+
+<AccordionGroup title="Common Validation Problems and Solutions">
+<Accordion title=".node file missing or empty">
+- Ensure the build process completed without error.
+- Check permissions in the `build` directory.
+- Re-run `node-gyp configure` and then `node-gyp build`.
+- Verify that your `binding.gyp` targets source files correctly.
+</Accordion>
+
+<Accordion title="Module load errors in Node.js REPL">
+- Confirm the `.node` file path is correct.
+- Check Node.js and native addon architecture compatibility (e.g., x64 vs ia32).
+- Inspect that the `.node` file matches the Node.js version ABI.
+- Clear and rebuild addon to sync versions.
+</Accordion>
+
+<Accordion title="Unexpected output when calling addon functions">
+- Review native code exports are properly exposed.
+- Validate your C++ code logic and bindings.
+- Insert debug logs or use test stubs.
+</Accordion>
+
+<Accordion title="installVersion or header files missing">
+- Trigger reinstallation of dev files with:
+
+  ```bash
+  node-gyp install
+  ```
+- Delete the dev folder manually (e.g., `~/.node-gyp/<version>`) and reinstall.
+- Check for network issues during header downloads.
+</Accordion>
+</AccordionGroup>
+
+---
+
+## 6. Confirmation of Success
+
+You have validated your environment when:
+
+- The compiled `.node` binding file exists and is accessible.
+- The addon loads successfully in Node.js without errors.
+- Simple calls to addon functions return expected results.
+- Development header and install files are present and correct.
+
+From this point, you can confidently proceed to develop, test, and deploy your native addons.
+
+---
+
+## 7. Next Steps
+
+- Explore [Creating Your binding.gyp File](../first-build-validation/creating-binding-gyp.md) to customize your build configuration.
+- Learn about [Running Configure and Build Commands](../first-build-validation/running-configure-build-commands.md) for deeper control.
+- Visit the troubleshooting guides if you encounter setup or build errors.
+
+<Tip>
+Always keep your Node.js version aligned with the native addon build environment to avoid ABI incompatibilities.
+</Tip>
+
+---
+
+_For comprehensive references and troubleshooting, please consult the related documentation pages and the [node-gyp GitHub repository](https://github.com/nodejs/node-gyp)._  

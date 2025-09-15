@@ -1,0 +1,199 @@
+---
+title: "Example: binding.gyp and Typical Addon Structure"
+description: "Walk through a minimal binding.gyp example and explore where these files fit in typical addon projects. Learn how configuration affects build output and how node-gyp parses and uses these files."
+---
+
+# Example: binding.gyp and Typical Addon Structure
+
+Explore how a minimal `binding.gyp` example fits within the typical addon project layout, and understand how its configuration impacts the build output. This page walks you through a straightforward `binding.gyp` file, illustrates where these files reside in native addons, and clarifies how `node-gyp` parses them to produce platform-specific builds.
+
+---
+
+## Why binding.gyp Matters
+
+For Node.js native addon development, the `binding.gyp` file is the essential blueprint that defines what source files to compile, the type of build artifacts, and platform-specific tweaks. Understanding its structure and typical placement empowers you to shape your build process clearly and predictably.
+
+Whether you're creating your first addon or maintaining an existing project, knowing how this file fits in is crucial to successfully building native modules.
+
+## What Is binding.gyp? — Simple Definition
+
+At its core, `binding.gyp` is a JSON-like configuration file describing the build targets for your addon. It's used by `node-gyp` to generate the platform-specific project files such as Makefiles (Unix), Xcode projects (macOS), or Visual Studio solutions (Windows).
+
+This file outlines:
+
+- Target name for the addon
+- Source files to compile
+- Build options and flags
+- Platform-specific conditions and settings
+- Dependencies on other targets or libraries
+
+Think of it as the rulebook guiding your addon’s compilation.
+
+## Typical Addon Project Structure
+
+A native addon project generally looks like:
+
+```
+my_node_addon/         # Root directory of your addon
+├── binding.gyp       # Build config file (core of this page)
+├── package.json      # Node.js package metadata
+├── src/              # Source directory
+│   └── binding.cc    # Native addon source code
+└── build/            # Generated build files and outputs
+```
+
+The `binding.gyp` stems from the project root, describing how the `src/binding.cc` and any other native source files are compiled.
+
+## Minimal binding.gyp Example
+
+Here's the bare minimum to build a typical Node.js addon:
+
+```python
+{
+  "targets": [
+    {
+      "target_name": "binding",
+      "sources": [ "src/binding.cc" ]
+    }
+  ]
+}
+```
+
+### How to read this example:
+
+- `targets`: This is an array since a project can generate multiple build targets.
+- `target_name`: The identifier used in build files and in `require()` calls when loading your addon (e.g., `require('./build/Release/binding.node')`).
+- `sources`: The list of source files to compile, relative to the `binding.gyp` location.
+
+This configuration produces a build called `binding.node` from `src/binding.cc`.
+
+## How node-gyp Uses binding.gyp
+
+When you run `node-gyp configure` or `node-gyp build`, `node-gyp`:
+
+1. Looks in the current directory for `binding.gyp`.
+2. Parses it to understand your build targets and options.
+3. Combines it with Node.js headers, environment info, and platform tooling.
+4. Generates platform-specific build files (Makefiles, project files).
+5. Executes the build commands accordingly.
+
+This means your binding.gyp directly dictates what sources and options your addon builds with, making it the critical control point.
+
+## Adding Complexity: Platform-Specific Settings
+
+For real-world projects, you often need platform-specific tweaks such as different compiler flags, sources, or libraries. `binding.gyp` supports conditional blocks, for example:
+
+```python
+{
+  "targets": [
+    {
+      "target_name": "binding",
+      "sources": [ "src/binding.cc" ],
+      "conditions": [
+        ["OS=='win'", {
+          "defines": [ "WINDOWS_BUILD" ]
+        }],
+        ["OS=='linux'", {
+          "defines": [ "LINUX_BUILD" ]
+        }]
+      ]
+    }
+  ]
+}
+```
+
+This ensures platform-specific preprocessor definitions guide your addon compilation.
+
+## Common Enhancements in binding.gyp
+
+Beyond sources and defines, you can specify:
+
+- Additional `include_dirs` for header files
+- Compiler flags (`cflags`) and linker flags (`ldflags`)
+- Dependencies on other targets
+- Library linking
+
+For example, to add an include directory and a compiler flag:
+
+```python
+{
+  "targets": [
+    {
+      "target_name": "binding",
+      "sources": [ "src/binding.cc" ],
+      "include_dirs": [ "<(node_root_dir)/src" ],
+      "cflags!": [ "-fno-exceptions" ],
+      "conditions": [
+        ["OS=='win'", {
+          "msvs_settings": {
+            "VCCLCompilerTool": {
+              "ExceptionHandling": 1
+            }
+          }
+        }]
+      ]
+    }
+  ]
+}
+```
+
+## Real-World Scenario: Linking OpenSSL
+
+As a practical use case, the [Linking to OpenSSL](https://github.com/nodejs/node-gyp/blob/main/docs/Linking-to-OpenSSL.md) page shows how to conditionally include OpenSSL headers and libraries based on Node’s OpenSSL linkage. This is done entirely in `binding.gyp` through variables, conditions, and source configuration.
+
+## Tips and Best Practices
+
+- Place your `binding.gyp` in your addon root directory, alongside `package.json`.
+- Keep your source paths relative and organized.
+- Use `conditions` to isolate platform-specific quirks for maintainability.
+- Use variable interpolation (e.g., `<(node_root_dir)`) to reference Node.js development paths reliably.
+- Keep your `targets` list clean and minimal.
+
+## Common Pitfalls
+
+- Omitting `binding.gyp` causes `node-gyp` to fail silently or with confusing errors.
+- Mismatched source paths or misspelled target names lead to build errors.
+- Forgetting to add platform-specific sources can cause build failures on some platforms.
+
+## How This Fits into the Overall Workflow
+
+Referencing the broader flow, this page fits within the Integration & Ecosystem group and complements:
+
+- [How node-gyp Integrates with Your Environment](https://github.com/nodejs/node-gyp/blob/main/docs/overview/integration-and-ecosystem/integration-with-environments.mdx)
+- [Supported Development Workflows](https://github.com/nodejs/node-gyp/blob/main/docs/overview/core-concepts-and-architecture/supported-workflows.mdx)
+
+Together, these explain how your `binding.gyp` drives the build generation which in turn links native addons seamlessly with Node.js.
+
+---
+
+## Summary
+
+The `binding.gyp` file is the fundamental configuration that defines how your native addon compiles. This page helps you get comfortable with a minimal example and see how it fits in your typical addon project structure. Mastering this enables you to customize your builds accurately across platforms, ensuring smooth compilation via `node-gyp`.
+
+---
+
+## See Also
+
+- [binding.gyp Examples in the Wild](https://github.com/nodejs/node-gyp/blob/main/docs/binding.gyp-files-in-the-wild.md)
+- [How node-gyp Integrates with Your Environment](https://github.com/nodejs/node-gyp/blob/main/overview/integration-and-ecosystem/integration-with-environments.mdx)
+- [Supported Development Workflows](https://github.com/nodejs/node-gyp/blob/main/overview/core-concepts-and-architecture/supported-workflows.mdx)
+- [Linking to OpenSSL](https://github.com/nodejs/node-gyp/blob/main/docs/Linking-to-OpenSSL.md)
+
+---
+
+## Example Illustration: Typical Addon File Structure
+
+```plaintext
+my_node_addon/
+├── binding.gyp          # Your build config
+├── package.json         # Standard npm package file
+├── src/
+│   └── binding.cc       # Native addon source code
+└── build/               # Auto generated build directory by node-gyp
+
+```
+
+Visualizing this simple hierarchy helps place your `binding.gyp` in context.
+
+
+---

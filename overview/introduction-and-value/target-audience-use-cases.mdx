@@ -1,0 +1,131 @@
+---
+title: "Who Should Use node-gyp?"
+description: "node-gyp is designed for Node.js developers, addon maintainers, and library authors who need to build, distribute, or consume native modules. Its typical use cases include C/C++ module development, platform-specific optimizations, and integrating performance-critical code with Node.js applications."
+---
+
+# Who Should Use node-gyp?
+
+## Unlocking Native Module Development with node-gyp
+
+If you’ve ever needed to incorporate high-performance native code directly into your Node.js applications, you know the challenge: compiling C or C++ code into a Node.js addon is notoriously tricky across different platforms. This is exactly where **node-gyp** shines — a cross-platform tool specifically designed to automate and simplify building native addons.
+
+### Designed For:
+
+- **Node.js Developers** eager to extend functionality by embedding native C/C++ code for speed or system-level access.
+- **Addon Maintainers** who publish native modules and need a consistent, reliable build process across Windows, macOS, and Linux.
+- **Library Authors** targeting performance-critical features that cannot be achieved through pure JavaScript.
+
+### Typical Scenarios Where node-gyp Is Essential
+
+- **Creating Custom Native Modules:** When your project calls for a native addon to boost performance or utilize system APIs not available in pure JS.
+- **Maintaining Cross-Platform Compatibility:** Managing the complex build differences among operating systems with one unified tool.
+- **Building for Specific Node.js Versions or Runtimes:** Supporting addon builds against various Node.js versions or third-party runtimes like Electron.
+- **Integrating Existing C/C++ Libraries:** Wrapping external native libraries as Node.js addons for seamless integration.
+
+## Why This Page Matters to You
+
+You’re here because you want to know if node-gyp is right for your project. This page focuses precisely on understanding who benefits from node-gyp and why. It complements the broader documentation by zooming in on the user types and real-world use cases, helping you decide if node-gyp meets your needs.
+
+---
+
+## What Is node-gyp Meant For?
+
+At its core, **node-gyp** automates generating native build files and compiling C/C++ addons using your platform’s native toolchains (e.g., Visual Studio on Windows, Make on Unix). It eliminates the manual, error-prone steps of configuring makefiles or project files:
+
+- Automatically downloads the correct version of Node.js headers needed for compilation.
+- Generates platform-specific build files (`Makefile` on Unix/Linux/macOS, `.vcxproj` on Windows).
+- Handles architecture targeting and build modes (Debug/Release).
+
+By doing this, node-gyp ensures developers can focus on writing their native code without struggling with complex platform-specific build details.
+
+## Who Benefits Most From Using node-gyp?
+
+### 1. Native Addon Developers: From Zero to Build
+
+If you’re writing a Node.js native addon from scratch, node-gyp is your launchpad. It streamlines the essential steps: configuring the build environment, generating the necessary files, and building your addon consistently across platforms.
+
+**Example:** Alice is a developer creating a high-speed image processing module in C++. With node-gyp, Alice generates platform-aware build files with a single command and compiles her addon on Windows and Linux with minimal hassle.
+
+### 2. Maintainers of Cross-Platform Native Libraries
+
+Modules meant for publication on npm or other registries must build smoothly on developers’ various machines. node-gyp provides a unified build interface that encapsulates platform complexity.
+
+**Example:** Bob maintains a database driver written in C++ for Node.js. Using node-gyp, his continuous integration pipelines build for Windows, macOS, and Linux automatically, catching issues early and simplifying release workflows.
+
+### 3. Libraries Requiring Platform-Specific Optimizations
+
+Sometimes, native code is essential for squeezing maximum performance or accessing OS-level features. node-gyp supports these scenarios by integrating easily with your `binding.gyp` configuration to manage platform-specific sources, compiler flags, and dependencies.
+
+**Example:** Carol’s networking addon includes native code optimized separately for ARM and x64 architectures. She configures node-gyp to target multiple Node.js versions and architectures transparently.
+
+### 4. Developers Integrating Third-Party Native Runtimes or Headers
+
+When targeting third-party forks of Node.js or runtimes like Electron, which ship different header files, node-gyp allows specifying custom header paths or distributions with `--nodedir` or `--dist-url`. This flexibility enables seamless builds against non-standard environments.
+
+**Example:** Dennis builds an Electron desktop app requiring a native file system addon. Using node-gyp’s `--dist-url` option, he compiles addons compatible with Electron’s modified Node.js runtime.
+
+## What node-gyp Is Not For
+
+- node-gyp does **not** compile Node.js itself. Use the Node.js project build process for that.
+- It doesn’t provide an API or GUI but functions as a command-line tool to invoke native build systems.
+- It is not a replacement for full native build environments; rather, it orchestrates them seamlessly.
+
+## Common Benefits for node-gyp Users
+
+- **Cross-platform confidence:** One tool handles the build differences of Windows, macOS, Linux.
+- **Automated header management:** It fetches Node.js headers automatically for the build target.
+- **Flexible configuration:** Easily specify target Node.js versions, build types, architectures.
+- **Consistency:** Stable builds that are repeatable on developer machines and CI/CD pipelines.
+
+## Getting Ready to Use node-gyp
+
+To start, ensure your environment meets the prerequisites such as installed Python, compilers, and build tools. Then, working within your module directory:
+
+```bash
+node-gyp configure
+node-gyp build
+```
+
+This simple flow generates the correct build files and compiles your native addon. From here, you can require your compiled addon in your Node.js application.
+
+<Tip>
+Explore the [Prerequisites & System Requirements](/getting-started/setup-prerequisites-installation/prerequisites-system-requirements) page to ensure your environment is properly set up.
+</Tip>
+
+---
+
+## Next Steps and Related Documentation
+
+- Learn more about [What Is node-gyp?](/overview/introduction-and-value/product-overview) to understand the tool's core concepts.
+- Explore [Key Features at a Glance](/overview/introduction-and-value/core-features-quick-overview) to see node-gyp’s capabilities.
+- Dive into [How node-gyp Integrates With Your Environment](/overview/integration-and-ecosystem/integration-with-environments) for setup details.
+- Check out guides on creating and managing your `binding.gyp` files.
+
+By understanding who node-gyp serves best, you can leverage its full potential and accelerate your native addon development journey.
+
+---
+
+## Frequently Asked Questions
+
+<AccordionGroup title="Common Questions About node-gyp Usage">
+<Accordion title="Do I need to be an expert in C++ to use node-gyp?">
+No. While node-gyp compiles native code, you only need to know enough C++ to write or maintain your addons. node-gyp manages the build process and integration with Node.js.
+</Accordion>
+<Accordion title="Can node-gyp build addons for different Node.js versions?">
+Yes. You can specify the target Node.js version with the `--target` option, and node-gyp downloads the correct headers for that version.
+</Accordion>
+<Accordion title="I develop on Windows, macOS, and Linux. Will node-gyp work the same on all my platforms?">
+Absolutely. node-gyp generates native build files appropriate for each platform, providing a consistent workflow across operating systems.
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Summary
+
+This page clarifies who should use node-gyp and why it is essential for native Node.js addon development. Whether you’re building new native modules, maintaining cross-platform libraries, or targeting specialized runtimes, node-gyp meets your needs by simplifying and standardizing the build process.
+
+
+---
+
+

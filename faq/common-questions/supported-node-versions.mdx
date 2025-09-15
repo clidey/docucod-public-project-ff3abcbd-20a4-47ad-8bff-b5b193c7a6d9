@@ -1,0 +1,95 @@
+---
+title: "Which Node.js versions does node-gyp support?"
+description: "Outlines the compatibility of node-gyp with current and legacy Node.js releases. Informs users how node-gyp selects headers and how to check or specify target Node.js versions during module compilation."
+---
+
+# Which Node.js Versions Does node-gyp Support?
+
+This page clarifies node-gyp's compatibility with various Node.js versions, how it selects source headers during compilations, and how you can manage or specify target Node.js versions for building native addons.
+
+---
+
+## Understanding node-gyp Compatibility with Node.js Versions
+
+node-gyp is designed to work seamlessly across a wide range of Node.js releases, from recent stable versions to many legacy releases, ensuring developers can build native addons reliably regardless of their Node.js runtime.
+
+### How node-gyp Determines Which Node.js Version to Target
+
+By default, node-gyp uses the headers of the currently running Node.js process to compile native addons. This means:
+
+- When you build an addon, node-gyp automatically detects and uses the header files that correspond to your Node.js runtime version.
+- This ensures API compatibility between the native addon and the Node.js runtime you're running.
+
+### Specifying a Different Target Node.js Version
+
+If you need to build your addon against a Node.js version different from the one currently installed, node-gyp provides CLI options to specify the target version explicitly. This is useful when:
+
+- Cross-compiling addons for older or newer Node.js versions.
+- Building for alternate runtimes or custom Node.js forks.
+
+You can specify the target version using the `--target` flag:
+
+```bash
+node-gyp rebuild --target=14.17.0
+```
+
+This instructs node-gyp to download and use the header files for Node.js v14.17.0 instead of your local runtime version.
+
+### How Header Files Are Managed
+
+When a specific target version is set, node-gyp will:
+
+1. Download the corresponding Node.js headers from official sources, if not already cached locally.
+2. Cache the headers for future builds to improve performance and avoid repeated downloads.
+3. Use these headers in the build process to ensure binary compatibility with the target version.
+
+### Verifying the Target Version in Use
+
+You can check which version node-gyp is targeting by inspecting your build commands or explicitly passing the `--nodedir` parameter to point to a folder with the desired Node.js source headers.
+
+Example:
+
+```bash
+node-gyp rebuild --nodedir=/path/to/custom/node-src
+```
+
+This approach lets advanced users work with customized or locally patched Node.js versions.
+
+---
+
+## Best Practices and Troubleshooting
+
+- **Always specify the target Node.js version explicitly** when building your addon for deployment in environments different from your development machine.
+- **Use the `--target` option instead of `--nodedir`** unless you have a specialized need to build with a local source tree.
+- If header downloads fail, confirm network access and verify your Node.js version string is correct.
+- Use `node-gyp` version 11.x or later for the best support of the newest Node.js versions.
+
+---
+
+## Summary
+
+- node-gyp supports native addon builds for both current and legacy Node.js versions.
+- By default, it uses headers matching the running Node.js version.
+- You can specify the `--target` flag to build against any supported Node.js version explicitly.
+- Header files are downloaded and cached automatically to streamline builds.
+
+For more detailed build workflows and header management, consult [Supported Development Workflows](https://nodejs.org/docs/node-gyp/overview/core-concepts-and-architecture/supported-workflows) and [Binding.gyp File Examples](https://nodejs.org/docs/node-gyp/faq/common-questions/binding-gyp-file).
+
+---
+
+### Related Documentation
+
+- [How node-gyp Integrates with Your Environment](https://nodejs.org/docs/node-gyp/overview/integration-and-ecosystem/integration-with-environments)
+- [Creating Your binding.gyp File](https://nodejs.org/docs/node-gyp/getting-started/first-build-validation/creating-binding-gyp)
+- [Running Configure and Build Commands](https://nodejs.org/docs/node-gyp/getting-started/first-build-validation/running-configure-build-commands)
+- [Troubleshooting Common Build Errors](https://nodejs.org/docs/node-gyp/guides/real-world-scenarios/common-errors-troubleshooting)
+
+---
+
+### Additional Resources
+
+- Official Node.js releases and API documentation: https://nodejs.org/en/download/releases/
+- node-gyp GitHub repository: [https://github.com/nodejs/node-gyp](https://github.com/nodejs/node-gyp)
+- Upgrade instructions for node-gyp: https://github.com/nodejs/node-gyp/blob/main/docs/Updating-npm-bundled-node-gyp.md
+
+---

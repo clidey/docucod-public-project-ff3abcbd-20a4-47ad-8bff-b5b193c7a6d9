@@ -1,0 +1,230 @@
+---
+title: "Optimizing Build Performance"
+description: "Tips and techniques to speed up node-gyp build times: using parallel jobs, incremental builds, caching, and advanced CLI options. Suitable for developers maintaining large or complex native addons."
+---
+
+# Optimizing Build Performance
+
+Optimize your node-gyp build times and keep your development workflow fast and efficient. This guide shows you practical techniques to speed up compilation, from leveraging parallel jobs to caching strategies and incremental builds. Whether maintaining a large native addon or iterating quickly in development, apply these tips to get faster builds and more productive coding.
+
+---
+
+## Workflow Overview
+
+**What this guide helps you accomplish:**
+- Drastically reduce build time when using node-gyp for native addon compilation.
+- Employ parallel job execution to fully utilize CPU cores.
+- Use incremental builds that recompile only changed files.
+- Implement caching techniques to avoid redundant work.
+- Leverage advanced CLI options for fine-tuned control.
+
+**Prerequisites:**
+- Working `node-gyp` setup with your native addon project.
+- Familiarity with basic build commands (`configure`, `build`).
+- Adequate system resources (CPU cores, disk space).
+
+**Expected Outcome:**
+- Faster compile times on typical build runs.
+- More efficient incremental development cycles.
+- Better use of hardware capabilities via parallelism.
+
+**Time Estimate:** 15-30 minutes to integrate optimizations and test results.
+
+**Difficulty Level:** Intermediate (basic command use + understanding of build concepts).
+
+---
+
+## Step-by-Step Instructions
+
+### 1. Enable Parallel Jobs Using the `-j` or `--jobs` Flag
+
+By default, node-gyp invokes the build tool (e.g., `make` or MSBuild) with a single thread. You can accelerate build times significantly by running compilation jobs in parallel.
+
+**How to use:**
+
+```bash
+node-gyp build -j 4
+# or
+node-gyp build --jobs max  # uses all available CPU cores
+```
+
+**What happens:**
+- For Unix-like systems, `make` runs multiple compile jobs concurrently.
+- On Windows, MSBuild receives a `/m` flag to enable parallelism.
+
+**Tips:**
+- Use `--jobs max` to automatically set jobs to the number of logical CPU cores.
+- Manually specify a number if you want to reserve CPU capacity for other tasks.
+
+**Verify:**
+- Observe faster build output with multiple compile units proceeding simultaneously.
+- Use verbose logging (`--verbose`) to confirm parallel flags passed through.
+
+---
+
+### 2. Use Incremental Builds (Avoid Full Cleans)
+
+Avoid running `node-gyp clean` or `rebuild` unless absolutely necessary. Incremental builds only compile updated source files, greatly speeding repeated builds.
+
+**Best practice:**
+- Run `node-gyp configure` once.
+- Use `node-gyp build` repeatedly to compile, reusing prior build outputs.
+
+**When to clean:**
+- After switching branches with significant source changes.
+- When encountering build errors that may relate to stale binaries.
+
+**Result:**
+- Using incremental builds means only modified files recompile, cutting build times dramatically.
+
+---
+
+### 3. Cache Node.js Headers and Dependencies
+
+node-gyp downloads Node.js headers needed to build native addons. These downloads are cached in a platform-specific directory.
+
+**Tips to optimize caching:**
+
+- By default, cached downloads live in your OS cache directory (e.g., `~/.cache/node-gyp/`).
+- You can configure a custom cache directory with the `--devdir` flag or through your `package.json` config:
+
+```json
+{
+  "config": {
+    "node_gyp_devdir": "/tmp/.gyp-cache"
+  }
+}
+```
+
+- This avoids repeated downloads in CI or across environments.
+
+**Cache headers explicitly:**
+
+```bash
+node-gyp install --ensure
+```
+
+- This downloads headers once for the configured Node.js version.
+
+---
+
+### 4. Use Native Incremental Tools and Thin Static Libraries
+
+To speed up rebuilds:
+
+- Use the `--thin=yes` flag to enable ThinLTO style static libraries, which are smaller and faster to link.
+
+```bash
+node-gyp configure --thin=yes
+node-gyp build
+```
+
+- This reduces linking overhead and incremental build times.
+
+**Note:** Thin static library support depends on your platform and compiler; check compatibility.
+
+---
+
+### 5. Fine-Tune Build Tool Usage
+
+Customize the underlying build tool invocation:
+
+- Override the `make` command if you prefer `gmake` or another variant using `--make`:
+
+```bash
+node-gyp build --make=gmake
+```
+
+- On Windows, you can specify Visual Studio version with `--msvs_version` and pass custom solution files to optimize builds.
+
+- Use CLI flags to skip unnecessary build steps or increase verbosity for debugging:
+
+```bash
+node-gyp build --verbose
+```
+
+---
+
+### 6. Leverage Environment Variables for Consistent Settings
+
+Set environment variables to enforce consistent job count and caching in CI and local builds.
+
+Example:
+
+```bash
+export JOBS=max
+export npm_package_config_node_gyp_devdir=/tmp/.gyp-cache
+```
+
+Use these variables in your build scripts or CI configuration to ensure consistent performance.
+
+---
+
+## Examples & Real-World Scenarios
+
+### Example 1: Full Parallel Build Using Maximum CPU Cores
+
+```bash
+cd my_native_addon
+node-gyp configure
+node-gyp build --jobs max
+```
+
+Result: Faster build by compiling sources in parallel across all cores.
+
+### Example 2: Incremental Build After Minor Source Change
+
+Modify `src/addon.cc`.
+
+```bash
+node-gyp build
+```
+
+Only `addon.cc` recompiles, drastically reducing build time compared to clean builds.
+
+### Example 3: Custom Cache Directory in CI Pipeline
+
+Add to your CI build script:
+
+```bash
+export npm_package_config_node_gyp_devdir=$CI_CACHE_DIR/node-gyp-cache
+node-gyp install --ensure
+node-gyp build -j 8
+```
+
+Avoids repetitive header downloads and speeds parallel build.
+
+---
+
+## Troubleshooting & Tips
+
+### Common Issue: Parallel Builds Fail or Cause Errors
+
+- Ensure your environment supports parallel compilation safely.
+- Some complex addons may have build order dependencies or race conditions.
+- If issues arise, test with fewer jobs (e.g., `-j 2`) or single-threaded.
+
+### Common Issue: Cache Not Used / Headers Download Repeatedly
+
+- Verify your `devdir` setting.
+- Check permissions in cache directories.
+- Use `node-gyp install --ensure` to force re-validation.
+
+### Best Practices
+
+- Always run `node-gyp configure` when changing build configurations.
+- Use `--jobs max` but monitor system resource usage.
+- Combine caching and parallelism for best build performance.
+
+---
+
+## Next Steps & Related Content
+
+- [Installing and Setting Up node-gyp](/guides/getting-started/installing-and-setting-up) to ensure your environment is properly configured.
+- [Your First Native Addon Build](/guides/getting-started/first-build-workflow) for an end-to-end beginner build process.
+- [Troubleshooting Common Build Errors](/guides/real-world-scenarios/common-errors-troubleshooting) to identify and fix build issues.
+- [Cross-Platform Builds](/guides/real-world-scenarios/cross-platform-builds) for multi-OS build optimizations.
+
+---
+
+Optimize your build process today with these actionable techniques and enjoy faster iteration cycles on your node-gyp native addons!

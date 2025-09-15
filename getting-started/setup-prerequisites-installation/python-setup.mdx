@@ -1,0 +1,270 @@
+---
+title: "Configuring the Python Dependency"
+description: "Guide users through correctly installing, selecting, and configuring a supported Python version for node-gyp on their platform. Covers environment variables, command-line flags, and troubleshooting multi-version Python installs."
+---
+
+# Configuring the Python Dependency for node-gyp
+
+This guide walks you through selecting, installing, and configuring a supported Python version for **node-gyp**, a critical step to successfully build native Node.js addons. Whether you have multiple Python versions installed or are setting it up for the first time, following these steps will ensure that **node-gyp** detects and uses the correct Python executable tailored to your platform and workflow.
+
+---
+
+## 1. Why Configure Python for node-gyp?
+
+`node-gyp` relies on Python as an essential build dependency to generate native module build files. Correct Python configuration:
+
+- Ensures compatibility with your Node.js and system environment.
+- Enables smooth cross-platform builds.
+- Helps avoid build and configuration errors caused by incompatible or missing Python versions.
+
+As of node-gyp v10, Python versions >= 3.12 require an updated node-gyp version to work correctly.
+
+---
+
+## 2. Supported Python Versions and Requirements
+
+- **Supported Python Range:** `>=3.6.0` (some distributions may work outside this range but are not officially supported).
+- On most platforms, Python 3.x is preferred.
+- For Python 3.12 or newer, ensure you run `node-gyp` version 10 or later.
+
+> For detailed supported Python versions and compatibility notes, see the official Python documentation: [Supported Python Versions](https://devguide.python.org/versions/).
+
+---
+
+## 3. Installing Python
+
+### On Unix/Linux and macOS
+
+- Install using your system package manager, for example:
+
+  ```bash
+  # Debian/Ubuntu
+  sudo apt-get update && sudo apt-get install python3
+
+  # macOS (using Homebrew)
+  brew install python
+  ```
+
+- Verify installation:
+
+  ```bash
+  python3 --version
+  ```
+
+### On Windows
+
+- Install Python from the [Microsoft Store](https://apps.microsoft.com/store/search?publisher=Python+Software+Foundation) or [python.org](https://www.python.org/downloads/windows/).
+- Alternatively, use Chocolatey for automated installation:
+
+  ```powershell
+  choco install python -y
+  ```
+
+- Verify installation:
+
+  ```powershell
+  py --version
+  ```
+
+---
+
+## 4. Selecting Which Python Version node-gyp Should Use
+
+If you have multiple Python versions installed or want to specify a particular executable, node-gyp provides several ways to explicitly configure which Python to use.
+
+### Option 1: Use the `--python` Command-Line Flag
+
+Pass the full path to the Python executable as part of the `node-gyp` command:
+
+```bash
+node-gyp <command> --python /path/to/your/python
+```
+
+**Example:**
+
+```bash
+node-gyp configure --python /usr/bin/python3.9
+```
+
+### Option 2: Set the `npm_config_python` Environment Variable (When Running via npm)
+
+When invoking `node-gyp` indirectly via `npm`, you can specify the python path with this environment variable.
+
+- **Unix/Linux/macOS:**
+
+  ```bash
+  export npm_config_python=/path/to/your/python
+  npm install
+  ```
+
+- **Windows CMD:**
+
+  ```cmd
+  set npm_config_python=C:\Path\To\python.exe
+  npm install
+  ```
+
+- **Windows PowerShell:**
+
+  ```powershell
+  $Env:npm_config_python = 'C:\Path\To\python.exe'
+  npm install
+  ```
+
+### Option 3: Set the `PYTHON` Environment Variable
+
+You can also configure your environment directly by setting the `PYTHON` environment variable to your desired Python path.
+
+- Example for Unix/Linux/macOS:
+
+  ```bash
+  export PYTHON=/usr/local/bin/python3
+  ```
+
+- Example for Windows CMD:
+
+  ```cmd
+  set PYTHON=C:\Path\To\python.exe
+  ```
+
+### Option 4: Use `NODE_GYP_FORCE_PYTHON` Environment Variable
+
+Forcing a specific Python executable bypasses all other configuration attempts:
+
+```bash
+export NODE_GYP_FORCE_PYTHON=/path/to/your/python
+```
+
+Or on Windows:
+
+```cmd
+set NODE_GYP_FORCE_PYTHON=C:\Path\To\python.exe
+```
+
+**Note:** If the selected interpreter is not a supported Python version, node-gyp will fail without fallback.
+
+---
+
+## 5. How node-gyp Detects Python Automatically
+
+If no explicit Python is configured, node-gyp attempts to locate Python automatically by checking the following in order:
+
+- The `NODE_GYP_FORCE_PYTHON` environment variable.
+- The Python path set via CLI `--python` or npm configs.
+- The `PYTHON` environment variable.
+- On Windows, the `py` launcher to find Python 3 installations.
+- Default system commands `python3` and `python`.
+- On Windows, scanning common Python installation paths (e.g., `C:\Program Files\Python39\python.exe`).
+
+If none are found or the version is unsupported, node-gyp will display detailed error messages and instructions.
+
+---
+
+## 6. Troubleshooting Python Configuration Issues
+
+<AccordionGroup title="Common Python Configuration Issues and How to Fix Them">
+<Accordion title="node-gyp cannot find any Python installation">
+Ensure you have Python installed and that:
+
+- The executable is discoverable in your system PATH.
+- The Python version meets node-gyp’s requirements (>=3.6.0).
+- You have correctly set environment variables like `npm_config_python` or `PYTHON` if multiple Python versions exist.
+
+Verify Python version manually:
+
+```bash
+python3 --version
+```
+
+If on Windows, try:
+
+```powershell
+py --list-paths
+```
+
+to see all installed Python versions.
+
+</Accordion>
+<Accordion title="Multiple Python versions causing conflicts">
+Explicitly set the Python version node-gyp should use using one of the configuration methods described (e.g., `--python` flag or `npm_config_python` environment variable).
+
+Avoid relying solely on the `python` or `python3` commands if they point to an undesired version.
+
+</Accordion>
+<Accordion title="Unsupported Python version detected">
+Make sure the Python version used by node-gyp is within the supported range:
+
+- Upgrade or install an appropriate Python version.
+- Confirm node-gyp version supports your Python version (e.g., node-gyp >=10 is required for Python 3.12+).
+
+</Accordion>
+<Accordion title="Python executable not in PATH or not executable">
+Add the directory containing your Python executable to the system PATH environment variable.
+
+- On Unix-like systems, modify `.bashrc`, `.zshrc`, or equivalent.
+- On Windows, use System Environment Variables settings.
+
+Restart your shell or command prompt after modifying PATH.
+
+</Accordion>
+</AccordionGroup>
+
+<Tip>
+Always verify your configured Python path before running `node-gyp` commands to minimize build failures.
+</Tip>
+
+---
+
+## 7. Practical Examples
+
+### Example: Setting Python to a Specific Version in Unix Terminal
+
+```bash
+export npm_config_python=/usr/local/bin/python3.9
+node-gyp configure
+node-gyp build
+```
+
+### Example: Running node-gyp with Python Flag (Cross-Platform)
+
+```bash
+node-gyp rebuild --python C:\Python39\python.exe
+```
+
+### Example: Setting Python in Windows PowerShell
+
+```powershell
+$Env:npm_config_python = 'C:\Python39\python.exe'
+npm install
+```
+
+---
+
+## 8. Summary
+
+Proper Python configuration is vital for successful native addon builds using node-gyp. Select and set a supported Python executable explicitly if you have multiple versions or encounter detection issues. Use environment variables or command-line flags according to your setup and platform.
+
+For detailed installation instructions, troubleshooting tips, and deep dives into the node-gyp build process, consult the related documentation sections below.
+
+---
+
+## 9. Related Links and Next Steps
+
+- [Installing node-gyp (All Platforms)](/getting-started/setup-prerequisites-installation/installation-all-platforms)
+- [Prerequisites & System Requirements](/getting-started/setup-prerequisites-installation/prerequisites-system-requirements)
+- [How node-gyp Integrates with Your Environment](/overview/integration-and-ecosystem/integration-with-environments)
+- [Creating Your binding.gyp File](/getting-started/first-build-validation/creating-binding-gyp)
+- [Configuring and Building Your Addon](/getting-started/first-build-validation/running-configure-build-commands)
+- [Common Errors and How to Fix Them](/getting-started/troubleshooting-common-issues/common-errors-and-solutions)
+
+---
+
+## 10. Additional Resources
+
+- Official Python supported versions: https://devguide.python.org/versions/
+- Python on Windows tips: https://github.com/Microsoft/nodejs-guidelines/blob/master/windows-environment.md#python
+- node-gyp GitHub repository: https://github.com/nodejs/node-gyp
+
+---
+
+By carefully configuring your Python dependency, you ensure a reliable, hassle-free building experience with node-gyp, empowering you to create powerful native addons seamlessly across platforms.

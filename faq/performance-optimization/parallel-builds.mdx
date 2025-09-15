@@ -1,0 +1,161 @@
+---
+title: "Can I speed up builds with parallel jobs?"
+description: "Explains how to leverage the --jobs (-j) option to parallelize compilation. Provides examples for maximizing CPU usage and advice for common issues on specific platforms."
+---
+
+# Can I speed up builds with parallel jobs?
+
+This page explains how to use the `--jobs` (or its shorthand `-j`) option in `node-gyp` to perform parallel builds of your native Node.js addons. Leveraging parallel jobs maximizes CPU utilization and can significantly reduce compile times. Alongside examples and practical tips, this page also addresses common platform-specific considerations to help you get the best build performance.
+
+---
+
+## What is the `--jobs` option?
+
+The `--jobs` option instructs the underlying build tool (like `make` on Unix or `msbuild` on Windows) to run multiple compile or build jobs in parallel. By specifying this option, you enable the build process to compile multiple source files simultaneously, using more CPU cores, and thus speeding up the total build duration.
+
+Depending on your platform, `node-gyp` passes this option to the correct native build system:
+
+- On Unix-like systems: passed as `--jobs N` to `make` (or compatible build tools).
+- On Windows: converted to `/m:N` for MSBuild to run multiple projects in parallel.
+
+
+## How to use the `--jobs` option
+
+You can specify the number of parallel jobs when invoking `node-gyp build` (or `node-gyp rebuild`) by using either the short or long form:
+
+```bash
+node-gyp build -j 4
+# or equivalently
+node-gyp build --jobs=4
+```
+
+This example requests 4 parallel compilation jobs.
+
+### Using `max` to maximize CPU usage
+
+To fully leverage your machine’s CPU cores without guessing the number, you can specify `max`:
+
+```bash
+node-gyp build -j max
+# or
+node-gyp build --jobs=max
+```
+
+This tells `node-gyp` to detect the number of CPU cores automatically and run that many jobs concurrently.
+
+### Setting jobs via environment variables
+
+Alternatively, you can set the environment variable `JOBS` to control parallelism globally for the current terminal session:
+
+```bash
+export JOBS=4        # Unix/Linux/macOS
+set JOBS=4           # Windows Command Prompt
+$Env:JOBS=4          # PowerShell
+```
+
+Then simply run `node-gyp build` without specifying the `-j` flag, and it will honor the `JOBS` environment variable.
+
+### Example full usage
+
+```bash
+# Parallel compile with 8 jobs, verbose output
+node-gyp rebuild -j 8 --verbose
+```
+
+## What happens internally?
+
+- On Unix, `node-gyp` appends `--jobs N` to the `make` command.
+- On Windows, it translates this to MSBuild's `/m:N` flag, which manages parallel project builds.
+
+`node-gyp` automatically detects your platform and applies the correct flags.
+
+## Best practices for optimal parallel builds
+
+- **Use `max` for maximum CPU utilization**: This removes guesswork and prevents CPU under-utilization.
+- **Avoid setting jobs higher than your CPU cores**: Running too many parallel jobs can cause thrashing and degrade performance.
+- **Monitor CPU and I/O usage**: Parallel builds increase disk and CPU activity. Ensure your system can handle this load.
+- **Keep your sources and dependencies properly structured**: Correct build dependencies ensure no race conditions or rebuild failures.
+
+## Troubleshooting common issues
+
+<AccordionGroup title="Parallel Build Issues and Solutions">
+<Accordion title="Build Fails or Errors with Parallel Jobs">
+If adding `-j` causes build failures, try:
+
+- Ensure your `binding.gyp` and source dependencies correctly specify targets so parallel builds do not run dependent steps simultaneously out of order.
+- For Windows users, verify you have the proper Visual Studio workload installed and your MSBuild version supports the `/m:` flag.
+- If problems persist, try building without parallel jobs (`node-gyp build`) to isolate if it’s a race or ordering issue.
+</Accordion>
+<Accordion title="Windows Specific Notes">
+- MSBuild supports `/m` for parallel builds starting with Visual Studio 2013+. Older versions may not respect this flag.
+- When using multiple `.sln` files or custom solutions, ensure `node-gyp` knows which `.sln` file to build; otherwise, parallelism may not work properly.
+- Using the `VSSetup` PowerShell module helps node-gyp detect and configure Visual Studio correctly to support parallel builds.
+</Accordion>
+<Accordion title="Unix/Linux/macOS Specific Notes">
+- GNU `make` and compatible tools like `gmake` support the `--jobs` flag.
+- Some BSD variants require `gmake` instead of `make` to support this flag properly.
+- If your build tool does not support `--jobs`, parallel builds may be silently ignored.
+</Accordion>
+</AccordionGroup>
+
+## How does this fit into your build workflow?
+
+1. **Prepare your addon source** as usual, with a proper `binding.gyp`.
+2. Run `node-gyp configure` to generate platform-specific build files.
+3. Use `node-gyp build -j max` to speed up compilation, making use of your system’s CPU cores efficiently.
+4. After build completion, your compiled `.node` binaries will be available as usual in `build/Release/` or `build/Debug/` folders.
+
+This approach maintains compatibility with traditional build steps while improving speed.
+
+---
+
+## Summary
+
+Using the `--jobs` or `-j` option with `node-gyp` enables parallel compilation jobs, which significantly accelerates build times by using multiple CPU cores concurrently. This is particularly valuable for large native addons with many source files. The option works seamlessly across supported platforms by passing the right flags to the native build tools (`make` or MSBuild).
+
+By leveraging `-j max` or explicitly specifying the number of jobs, you can optimize your build times without manual tuning. When issues arise, checking build dependencies, toolchain versions, and platform peculiarities ensures smooth parallel builds.
+
+---
+
+## Additional Resources
+
+- [Node-gyp README on Command Options](https://github.com/nodejs/node-gyp/blob/main/README.md#command-options)
+- [node-gyp build command source code and parallel job handling](https://github.com/nodejs/node-gyp/blob/main/lib/build.js)
+- [Visual Studio Parallel Builds Documentation](https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference)
+- [GNU Make Parallel Builds](https://www.gnu.org/software/make/manual/html_node/Parallel.html)
+
+---
+
+## Frequently Asked Questions
+
+<AccordionGroup title="FAQ on Parallel Builds with node-gyp">
+<Accordion title="Can I specify a specific number of jobs?">
+Yes, use `node-gyp build -j <number>` to set the number of parallel compile jobs explicitly.
+</Accordion>
+<Accordion title="What does `-j max` do?">
+It automatically sets the jobs to the number of CPU cores available on your system.
+</Accordion>
+<Accordion title="Does `--jobs` work on all platforms?">
+Yes, but internally it translates to the appropriate flags for your build tools. On Unix, it passes `--jobs` to `make`; on Windows, it passes `/m` to MSBuild.
+</Accordion>
+<Accordion title="Will parallel jobs always speed up the build?">
+Usually yes, but if your system is resource-constrained or your build has incorrect dependencies, it might cause failures or no improvement.
+</Accordion>
+<Accordion title="What should I do if the build fails only with `-j`?">
+Try a serial build first (`node-gyp build` without `-j`), check your `binding.gyp` for proper dependencies and file listings, and verify your toolchain versions and settings.
+</Accordion>
+</AccordionGroup>
+
+---
+
+<Tip>
+Always run `node-gyp configure` before building with parallel jobs to ensure your build files are up-to-date and correctly generated for your platform.
+</Tip>
+
+<Note>
+Using the `--jobs` option has no effect if your underlying build system does not support parallel builds, so ensure your platform's build system (e.g., MSBuild or GNU Make) supports it.
+</Note>
+
+<Warning>
+Avoid setting more parallel jobs than your CPU's logical cores to prevent system overload and potential build instability.
+</Warning>

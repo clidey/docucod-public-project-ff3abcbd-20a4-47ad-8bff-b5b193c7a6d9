@@ -1,0 +1,253 @@
+---
+title: "Your First Native Addon Build"
+description: "A step-by-step guide for compiling your first Node.js native addon using node-gyp, from project directory setup to generating build files and compiling sources. Illustrates the typical build lifecycle and explains output locations and common switches."
+---
+
+# Your First Native Addon Build
+
+This guide walks you through compiling your first Node.js native addon using `node-gyp`. From setting up your project directory, generating build files, to compiling source code, you’ll learn the main steps of the build lifecycle, where output files go, and key options to customize your build.
+
+---
+
+## Workflow Overview
+
+**Goal:** Build your native addon module by generating platform-specific build files and compiling them.
+
+**Prerequisites:**
+- A native addon project directory containing a valid `binding.gyp` file.
+- Proper development environment installed (Python, C/C++ build tools, compiler toolchain).
+- `node-gyp` installed globally or accessible in your PATH.
+
+**Expected Outcome:**
+- The project’s build files (Makefile, Visual Studio project files, or similar) generated in the `build/` directory.
+- A compiled addon shared object (`.node` file) located under `build/Release/` or `build/Debug/`.
+- Ready-to-use native addon, loadable via Node.js.
+
+**Time Estimate:** ~5-10 minutes (assuming your environment is correctly set up)
+
+**Difficulty Level:** Beginner to Intermediate
+
+---
+
+## Step-by-Step Instructions
+
+<Steps>
+<Step title="1. Navigate to Your Addon Project Root">
+Open a terminal and change directories to where your addon’s source and `binding.gyp` file reside:
+
+```bash
+cd path/to/your/native-addon
+```
+
+*Expected Result:* Your shell prompt points to the project root, and this directory contains `binding.gyp`.
+</Step>
+
+<Step title="2. Generate Project Build Files with `configure`">
+Run:
+
+```bash
+node-gyp configure
+```
+
+This step processes your `binding.gyp` file and creates platform-specific build configuration files (e.g., `Makefile` on Unix, `.vcxproj` files on Windows) inside the `build/` directory.
+
+*Expected Result:* The `build/` directory contains generated build files and a `config.gypi` config file.
+
+*Tip:* Use the `--debug` flag to generate debug build configurations:
+
+```bash
+node-gyp configure --debug
+```
+
+*Note:* If you have a custom Node.js version or source directory, specify it with `--target` or `--nodedir`.
+</Step>
+
+<Step title="3. Compile Your Addon with the `build` Command">
+Run:
+
+```bash
+node-gyp build
+```
+
+`node-gyp` will invoke the detected underlying build tool (`make`, `msbuild`, etc.) to compile your addon.
+
+*Expected Result:*
+- Compilation messages appear in the console.
+- On success, a `.node` binary is created in `build/Release/` or `build/Debug/`.
+
+*Tip:* Use `--jobs` or `-j` to compile in parallel (e.g., `node-gyp build -j 4`).
+</Step>
+
+<Step title="4. Verify Build Output Location">
+Locate the compiled addon binary:
+
+- On Unix/macOS, look inside:
+  `build/Release/your-addon-name.node` (or `Debug` if built with `--debug`)
+
+- On Windows:
+  `build\Release\your-addon-name.node`
+
+*Success Criteria:* The `.node` file exists and is non-empty.
+</Step>
+
+<Step title="5. Load and Test Your Addon in Node.js">
+In the root directory, launch Node.js and try:
+
+```js
+const addon = require('./build/Release/your-addon-name.node')
+console.log(addon.yourExportedFunction())
+```
+
+Replace `yourExportedFunction` with an actual function your addon exposes.
+
+*Expected Result:* Your addon loads with no errors, and functions behave as expected.
+</Step>
+
+</Steps>
+
+---
+
+## Understanding the Build Lifecycle
+
+During the build:
+
+- `node-gyp configure` reads your `binding.gyp` and generates `config.gypi` and native build files in `build/`.
+- `config.gypi` contains build variables such as architecture, debug/release mode, compiler flags.
+- The build uses system tools (`make`, `msbuild`, `clang`, etc.) to compile source files.
+- The compiled shared object (`.node`) is output into `build/Release/` or `build/Debug/`.
+
+This separation means you can repeatedly build without regenerating project files unless configuration or source files change.
+
+---
+
+## Common Command Line Switches
+
+- `--debug` / `--release`: Choose build mode (Debug enables symbols, disables optimizations).
+- `--jobs`, `-j n`: Run parallel compile jobs.
+- `--target=version`: Compile addon against specific Node.js version headers.
+- `--nodedir=path`: Use custom Node.js source headers.
+- `--msvs_version=2015|2017|2019|2022`: Specify Visual Studio version on Windows.
+- `--python=path`: Select specific Python executable.
+
+Use these flags with `configure`, `build`, or `rebuild` commands to customize your build.
+
+---
+
+## Practical Example
+
+Assuming your addon source is in `./my_addon`, and your main native source file is `src/addon.cc`:
+
+1. Create `binding.gyp` in the root directory with contents:
+
+```python
+{
+  "targets": [
+    {
+      "target_name": "my_addon",
+      "sources": [ "src/addon.cc" ]
+    }
+  ]
+}
+```
+
+2. Run configure:
+
+```bash
+node-gyp configure
+```
+
+3. Build:
+
+```bash
+node-gyp build
+```
+
+4. Verify the compiled addon binary:
+
+```bash
+ls build/Release/my_addon.node
+```
+
+5. Test loading the addon in Node.js:
+
+```bash
+node -e "console.log(require('./build/Release/my_addon.node'))"
+```
+
+You should see the loaded addon object printed.
+
+---
+
+## Troubleshooting & Tips
+
+<AccordionGroup title="Common Issues and Resolutions">
+<Accordion title="I get 'You must run `node-gyp configure` first!' error">
+This means the build files are missing. Always run `node-gyp configure` before `build` or `rebuild`.
+</Accordion>
+
+<Accordion title="The compiled `.node` file is not in expected directory">
+Check if you used `--debug` flag; debug builds output to `build/Debug/` instead of `build/Release/`.
+You can force release mode with `node-gyp build --release`.
+</Accordion>
+
+<Accordion title="Build fails on Windows due to Visual Studio detection">
+Ensure your Visual Studio installation includes the 'Desktop development with C++' workload.
+
+Alternatively, specify the Visual Studio version manually:
+
+```bash
+node-gyp configure --msvs_version=2019
+```
+
+Also, check the [Windows Visual Studio Setup guide](/getting-started/setup-prerequisites-installation/windows-visual-studio-setup) for detailed steps.
+</Accordion>
+
+<Accordion title="Python executable not found or incompatible">
+Set Python explicitly with `--python` option or environment variables as documented in the Python setup guide.
+
+Example:
+
+```bash
+node-gyp configure --python /usr/bin/python3
+```
+</Accordion>
+
+<Accordion title="Verbose logging to diagnose build issues">
+Add `--verbose` or `--loglevel=verbose` to increase informational output.
+
+```bash
+node-gyp build --verbose
+```
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Output and Artifacts
+
+- `build/config.gypi`: a JSON-like config file generated at configure time, describing your build environment and options.
+- `build/Makefile` or Visual Studio project files: platform-native build files.
+- `build/Release/*.node` or `build/Debug/*.node`: compiled addon binaries.
+- Temporary build directories and logs.
+
+Knowing these helps inspect the build status and troubleshoot problems.
+
+---
+
+## Next Steps & Related Content
+
+Once your first build completes successfully:
+
+- Explore writing your own `binding.gyp` file in-depth ([Writing Your First binding.gyp File](/guides/getting-started/binding-gyp-basics)).
+- Validate your build and test your addon ([Validating Your Setup](/getting-started/first-build-validation/validating-installation)).
+- Troubleshoot common build errors ([Common Errors and How to Fix Them](/getting-started/troubleshooting-common-issues/common-errors-and-solutions)).
+- Delve into cross-platform builds and performance optimizations in advanced guides.
+
+For comprehensive understanding, review [How node-gyp Works: Architecture & Workflow](/overview/core-concepts-and-architecture/component-architecture) and browse the glossary of key terms.
+
+---
+
+This guide equips you with the practical knowledge and commands to confidently build your first Node.js native addon using `node-gyp` and understand the files and operations involved in the build lifecycle.
+
+
+---

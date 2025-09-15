@@ -1,0 +1,243 @@
+---
+title: "Why does header file download or extraction fail?"
+description: "Discusses errors related to downloading and installing Node.js headers, network configuration pitfalls, and solutions such as checking proxy settings, using alternate mirrors, and local tarball usage."
+---
+
+# FAQ: Why Does Header File Download or Extraction Fail?
+
+When building native Node.js addons using node-gyp, the process requires downloading Node.js development header files. Failures in downloading or extracting these headers can halt your build and cause confusion. This FAQ explores the common reasons behind header download or extraction failures, guiding you through network configurations, proxy considerations, alternate download solutions, and fallback strategies to help you get back on track smoothly.
+
+---
+
+## 1. Why are Node.js header files needed?
+
+Node.js header files provide the necessary C++ development files to compile native addon modules compatible with a specific Node.js version. node-gyp automatically downloads these headers unless you specify a local directory containing them.
+
+---
+
+## 2. What causes the header download or extraction to fail?
+
+### 2.1 Network connectivity issues
+
+The most frequent cause is interrupted HTTP(S) downloads, usually due to firewall restrictions, proxy misconfigurations, or intermittent network problems.
+
+### 2.2 Proxy or firewall blocking
+
+Corporate or personal firewalls might block access to the Node.js distribution URLs. If your environment uses HTTP/HTTPS proxies, these must be correctly configured in node-gyp options.
+
+### 2.3 Incorrect proxy settings or missing proxy
+
+If node-gyp doesn't have the correct proxy information or the proxy requires authentication, header download requests will fail.
+
+### 2.4 Using a custom or alternate mirror without proper URLs
+
+Redirecting downloads to custom mirrors requires valid and reachable URLs for both tarballs and associated checksums.
+
+### 2.5 Extraction issues after download
+
+Even with a successful download, extraction can fail if the tarball is corrupted, incomplete, or you lack necessary permissions on the destination directory.
+
+### 2.6 Permissions errors (EACCES)
+
+Permission issues can prevent node-gyp from creating or writing to header directories, leading to failed extraction or installation failures.
+
+---
+
+## 3. How does node-gyp download and install headers?
+
+1. **Determine version and URLs:** node-gyp calculates the appropriate header tarball URL based on your Node.js version, dist-url overrides, and environment variables.
+
+2. **Download tarball:** It fetches the header tarball, typically from the official Node.js distribution or configured mirrors.
+
+3. **Verify checksum:** If available, SHASUMS256.txt is downloaded to verify the integrity of the tarball.
+
+4. **Extract relevant files:** Only essential header files (`*.h` and `*.gypi`) are extracted to a temporary directory.
+
+5. **Copy headers:** The extracted headers are copied into the node-gyp development directory.
+
+6. **Handle platform specifics:** On Windows, node-gyp additionally downloads `node.lib` files relevant to your architecture.
+
+If any step fails, node-gyp attempts retries or provides errors indicating the failure point.
+
+---
+
+## 4. How can I resolve header download failures?
+
+<AccordionGroup title="Header Download Failures — Common Solutions">
+<Accordion title="Check Your Network and Proxy Settings">
+
+- Confirm your internet connection is active and stable.
+- If you use an HTTP(S) proxy, configure node-gyp with the `--proxy` option or set the `proxy` key in your `.npmrc` or environment variables.
+- Use the `--noproxy` option to define hosts or URLs that bypass the proxy.
+- Example:
+
+```sh
+node-gyp install --proxy=http://proxy.example.com:8080 --noproxy=localhost,127.0.0.1
+```
+
+- Validate proxy authentication if required.
+
+</Accordion>
+
+<Accordion title="Use Environment Variable for Alternate Mirrors">
+
+- If your network restricts access to the official Node.js site, consider using the `NODEJS_ORG_MIRROR` environment variable to specify an alternate mirror.
+
+- Example:
+
+```sh
+export NODEJS_ORG_MIRROR=http://my.internal-mirror.com
+```
+
+- Ensure the mirror hosts the proper files: tarballs, checksums, and node.lib files if on Windows.
+
+</Accordion>
+
+<Accordion title="Download and Provide Local Tarball">
+
+- If network issues persist, manually download the Node.js header tarball compatible with your version from [nodejs.org/dist](https://nodejs.org/dist/).
+
+- Provide the path using the `--tarball` flag:
+
+```sh
+node-gyp install --tarball=/path/to/node-headers.tar.gz
+```
+
+- node-gyp will skip downloading and use your local tarball for installation and extraction.
+
+</Accordion>
+
+<Accordion title="Confirm Write Permissions and Directory Access">
+
+- Permission errors (`EACCES`) often occur when node-gyp cannot create or write to the development directory.
+
+- Try running commands with elevated privileges or change the `devDir` manually to a writable directory, like your OS temporary directory.
+
+- Example fallback handled automatically by node-gyp:
+
+    - It retries using a temporary directory under `/tmp` or the OS temp folder.
+
+- Avoid using `sudo` with npm unless necessary, as permission issues can escalate.
+
+</Accordion>
+</AccordionGroup>
+
+---
+
+## 5. What if the download succeeds but extraction fails?
+
+- Ensure disk space is sufficient for expanding the headers.
+- Corrupt downloads can cause extraction errors; clearing the cache or manually deleting old header folders can force a fresh download.
+- Parallel installations may cause file lock collisions, especially on Windows. Node-gyp uses retry mechanisms internally, but manual intervention might involve:
+  - Closing other compilation processes
+  - Restarting the terminal or system
+- Check filesystem case-sensitivity and path length limits on Windows; too-long paths can cause extraction to fail.
+
+---
+
+## 6. How to verify the headers were installed correctly?
+
+1. Locate your node-gyp development directory:
+
+```sh
+echo $HOME/.node-gyp
+```
+
+or check `gyp.devDir` if set explicitly.
+
+2. Inside, find a folder matching your Node.js version (e.g., `10.16.3`).
+3. This folder should include files like:
+
+```
+include/node/common.gypi
+include/node/node.h
+include/node/node_version.h
+installVersion
+```
+
+4. The `installVersion` file indicates the successful install iteration.
+5. If these exist, your headers are ready for compilation.
+
+---
+
+## 7. Advanced Tips & Best Practices
+
+- **Use consistent Node.js versions** when building to avoid version mismatch errors during header downloads.
+- For custom or forked Node.js builds (`process.release.name` != 'node'), ensure your custom URLs are correctly configured.
+- Use environment variables or CLI options to override URLs for corporate or offline scenarios.
+- Always delete partial or corrupted header folders before retrying installs.
+- Monitor verbose logs by using `--verbose` to get detailed insights during download and installation.
+
+---
+
+## 8. Troubleshooting checklist
+
+- Verify network connectivity and proxy credentials.
+- Ensure the specified target Node.js version is valid and supported.
+- Set or clear the `NODEJS_ORG_MIRROR` if appropriate.
+- Use `--tarball` to switch to local tarball installation if downloads fail repeatedly.
+- Confirm your user account has write permissions to the development directory.
+- Clear existing headers in your `devDir` to force a clean reinstall.
+- On Windows, verify file locking issues are minimized by avoiding parallel conflicting installs.
+
+---
+
+## 9. Where to get help
+
+If issues persist after following these steps:
+
+- Consult the broader [Troubleshooting Common Errors](https://nodejs.org/guides/troubleshooting-common-errors) documentation.
+- Ask in the Node.js or node-gyp community forums.
+- Check your corporate IT/Network team for proxy or firewall configurations.
+- Consider filing an issue on the [node-gyp GitHub](https://github.com/nodejs/node-gyp/issues) with detailed logs and environment information.
+
+---
+
+For more detailed insights on the installation and configuration process, see the full [node-gyp Installation Guide](https://github.com/nodejs/node-gyp#installation).
+
+---
+
+### Additional Resources
+- [node-gyp install source code for detailed behavior](https://github.com/nodejs/node-gyp/blob/main/lib/install.js)
+- [Custom mirrors and NODEJS_ORG_MIRROR usage](https://github.com/nodejs/node-gyp/blob/main/lib/process-release.js#L45)
+- [Proxy and HTTP configuration in node-gyp](https://github.com/nodejs/node-gyp/blob/main/lib/download.js)
+
+---
+
+This documentation is part of the node-gyp FAQ and troubleshooting series, focusing on efficient native addon builds and environment reliability.
+
+
+---
+
+# Summary
+
+This FAQ provides actionable guidance on resolving failures during Node.js header downloads or extraction in node-gyp. It covers common root causes such as network connectivity, proxy settings, permission problems, and corrupted files. Practical solutions include configuring proxies correctly, using alternate mirrors via environment variables, employing local tarballs when necessary, and addressing permission fallbacks. Users learn how node-gyp manages header retrieval internally and how to verify successful header installation for builds.
+
+Key sections include:
+- Causes of download and extraction failures
+- Step-by-step resolution strategies
+- Proxy and mirror configuration
+- Permissions and fallback handling
+- Validation and troubleshooting checklists
+- Links to source code and detailed documentation
+
+For further support, users should consult related troubleshooting topics in node-gyp, installation guides, and community forums to ensure a stable native build environment.
+
+---
+
+## Important Links
+- [node-gyp Installation and Setup Guide](https://github.com/nodejs/node-gyp#installation-all-platforms)
+- [Common Errors and Solutions](https://nodejs.org/guides/getting-started/troubleshooting-common-issues/common-errors-and-solutions)
+- [Python Not Found FAQ](https://nodejs.org/faq/troubleshooting/python-not-found)
+- [Visual Studio Not Found FAQ](https://nodejs.org/faq/troubleshooting/visual-studio-not-found)
+- [Official node-gyp GitHub Repository](https://github.com/nodejs/node-gyp)
+- [node-gyp Proxy Configuration](https://github.com/nodejs/node-gyp/blob/main/lib/download.js)
+
+---
+
+## Suggested Next Steps
+- Validate proxy and network configuration for your build environment.
+- Switch to local header tarballs in restricted or offline environments.
+- Explore other FAQ entries on build errors and environment validation.
+- Review the node-gyp architecture and integration documentation for deeper understanding.
+- Contact support or community channels if persistent errors occur after applying these solutions.

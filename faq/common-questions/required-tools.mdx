@@ -1,0 +1,175 @@
+---
+title: "What tools do I need to use node-gyp?"
+description: "Clarifies the software prerequisites for running node-gyp across supported operating systems, including Python, C/C++ compilers, and any platform-specific dependencies. Details the minimum supported versions and links to setup instructions."
+---
+
+# What Tools Do I Need to Use node-gyp?
+
+## Overview
+
+To build native Node.js addons using **node-gyp**, you need to have specific software tools installed and properly configured on your system. These tools vary depending on your operating system but generally include Python, a C/C++ compiler toolchain, and platform-specific dependencies.
+
+This page guides you through the essential prerequisites required to successfully use node-gyp, including minimum supported versions and pointers to the detailed setup instructions.
+
+---
+
+## 1. Python
+
+### Why Python?
+
+Node-gyp relies on **Python** to generate build files and control the build process, as it uses the GYP build system under the hood. 
+
+### Supported Python Versions
+
+- **Python 3.x** is required, with **Python 3.6 or later** strongly recommended.
+- Python 2 is **not supported**.
+
+### How node-gyp Finds Python
+
+node-gyp automatically attempts to locate Python through the following mechanisms, in order:
+
+- The `NODE_GYP_FORCE_PYTHON` environment variable or command-line `--python` flag
+- The `python` path configured via npm (`npm config get python`)
+- The `PYTHON` environment variable
+- Standard system `python3` or `python` commands
+- Windows-specific default Python install locations
+
+If node-gyp cannot find a suitable Python executable, it will error out with guidance on how to specify the correct Python path.
+
+### Configuring Python
+
+Refer to the [Configuring the Python Dependency](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/setup-prerequisites-installation/python-setup.md) page for detailed setup and tips.
+
+
+---
+
+## 2. C/C++ Compiler Toolchain
+
+Because node-gyp builds native addons by compiling C/C++ source code, you need platform-appropriate compiler toolchains:
+
+### On Windows
+
+- **Visual Studio 2022** or later, with the **Desktop development with C++** workload installed.
+- Alternatively, Visual Studio Build Tools for C++ with the necessary components installed.
+
+Node-gyp needs the MSBuild system and C++ compilers. Notably, the Microsoft Visual C++ Build Tools must be present and properly configured in your environment.
+
+Refer to the detailed [Windows: Visual Studio Setup](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/setup-prerequisites-installation/windows-visual-studio-setup.md) guide for installation and configuration.
+
+### On macOS
+
+- Install **Xcode Command Line Tools** (CLT).
+- This provides the `clang` compiler and related build tools.
+
+Run the following command to install CLT if not installed:
+
+```bash
+xcode-select --install
+```
+
+See [Prerequisites & System Requirements](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/setup-prerequisites-installation/prerequisites-system-requirements.md#macos) for details.
+
+### On Unix/Linux
+
+- Install **make**, **gcc**, and **g++**.
+- Ensure `python3` is installed (see Python section).
+
+Use your distribution's package manager, e.g., `apt`, `yum`, or `dnf`, to install build-essential tools.
+
+Example on Ubuntu/Debian:
+
+```bash
+sudo apt-get update
+sudo apt-get install build-essential python3
+```
+
+More details are available on the [Prerequisites & System Requirements](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/setup-prerequisites-installation/prerequisites-system-requirements.md#linux) page.
+
+---
+
+## 3. Platform-Specific Dependencies
+
+### Windows
+
+- Visual Studio with C++ workload
+- Windows SDK (certain Windows versions require specific SDK versions)
+- For ARM64 support, ensure the correct Visual Studio components for ARM are installed.
+
+### macOS
+
+- Xcode Command Line Tools
+- For older macOS versions, ensure compatibility of the SDK and build toolchain.
+
+### Linux / Unix
+
+- Standard development tools (`make`, `gcc`, `g++`, `python3`)
+- Linux kernel headers might be required depending on native modules.
+
+---
+
+## 4. Additional Tips & Best Practices
+
+- Always verify your build environment after installation by running initial build commands and checking for errors.
+- Keep your tools updated to supported versions to avoid compatibility issues.
+- Check system PATH and environment variables to ensure compilers and Python executables are discoverable.
+
+---
+
+## 5. Quick Reference - Summary of Required Tools by OS
+
+| Operating System | Required Tools                        | Minimum Version/Notes               |
+|------------------|------------------------------------|-----------------------------------|
+| Windows          | Visual Studio 2022 (C++ workload)  | Latest stable VS 2022 recommended  |
+|                  | Python 3.6+                        | Node-gyp requires Python 3 only    |
+| macOS            | Xcode Command Line Tools (CLT)     | Installed via `xcode-select`       |
+|                  | Python 3.6+                        | System or installed via package mgr |
+| Linux/Unix       | gcc, g++, make, python3             | Use distro's build-essential pkg   |
+
+---
+
+## 6. Where to Get Help
+
+If you run into issues with tool setup or compatibility, consult:
+
+- [node-gyp Installation Guide](https://github.com/nodejs/node-gyp#installation)
+- [Windows Visual Studio Setup](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/setup-prerequisites-installation/windows-visual-studio-setup.md)
+- [Python Setup](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/setup-prerequisites-installation/python-setup.md)
+- [Common Errors and How to Fix Them](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/troubleshooting-common-issues/common-errors-and-solutions.md)
+
+<Tip>
+Having the correct versions of Python and your compiler toolchain installed and discoverable on your system path is critical for node-gyp to function without errors.
+</Tip>
+
+<Warning>
+Do not attempt to use Python 2 with node-gyp. This is unsupported and will cause build failures.
+</Warning>
+
+---
+
+## 7. Next Steps
+
+Once your tools are installed and configured, move on to:
+
+- Creating your `binding.gyp` file to configure your addon build.
+- Running `node-gyp configure` and `node-gyp build` to compile your native addon.
+- Validating your setup and build outputs.
+
+Consider reading the following guides:
+
+- [Creating Your binding.gyp File](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/first-build-validation/creating-binding-gyp.md)
+- [Configuring and Building Your Addon](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/first-build-validation/running-configure-build-commands.md)
+- [Validating Your Setup](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/first-build-validation/validating-installation.md)
+
+---
+
+## Related Documentation
+
+- [Prerequisites & System Requirements](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/setup-prerequisites-installation/prerequisites-system-requirements.md)
+- [Windows Visual Studio Setup](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/setup-prerequisites-installation/windows-visual-studio-setup.md)
+- [Configuring the Python Dependency](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/setup-prerequisites-installation/python-setup.md)
+- [Common Errors and How to Fix Them](https://github.com/nodejs/node-gyp/blob/main/docs/getting-started/troubleshooting-common-issues/common-errors-and-solutions.md)
+- [FAQ: node-gyp can't find a suitable Python executable](https://github.com/nodejs/node-gyp/blob/main/docs/faq/troubleshooting/python-not-found.md)
+
+---
+
+This page is part of the [Getting Started & Common Questions](https://github.com/nodejs/node-gyp/tree/main/docs/faq/common-questions) section of the node-gyp documentation.

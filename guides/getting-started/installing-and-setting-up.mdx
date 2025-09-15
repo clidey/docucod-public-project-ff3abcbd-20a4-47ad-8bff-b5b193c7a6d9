@@ -1,0 +1,271 @@
+---
+title: "Installing and Setting Up node-gyp"
+description: "Learn how to install node-gyp and prepare your development environment across all major operating systems. Covers prerequisites, environment variable configuration, and troubleshooting initial setup issues. Start here if you're building a native addon for the first time."
+---
+
+# Installing and Setting Up node-gyp
+
+## Overview
+
+This guide walks you through installing `node-gyp` and preparing your development environment on Windows, macOS, and Unix/Linux systems. It covers prerequisites, installation steps, configuration of the Python dependency, environment variable setup, and troubleshooting tips for initial setup issues.
+
+If you're building a native Node.js addon for the first time, this is your starting point to get everything in place for a smooth build process.
+
+---
+
+## What You Will Achieve
+
+- Install `node-gyp` globally using `npm`
+- Set up necessary system dependencies like Python, compilers, and build tools
+- Configure environment variables for Python and Visual Studio (Windows)
+- Validate successful installation
+- Understand common pitfalls and how to avoid them
+
+---
+
+## Prerequisites
+
+Before you begin, ensure the following:
+
+- You have a supported version of Node.js installed (check compatibility with `node-gyp`)
+- You have administrator/root access to install system tools and modify environment variables
+- Your system meets the compiler and build tool requirements:
+  - On Unix/Linux: Python, `make`, GCC or equivalent
+  - On macOS: Python, Xcode Command Line Tools
+  - On Windows: Python, Visual Studio build tools or similar
+
+Refer to the [Prerequisites & System Requirements](https://nodejs.org/api/node-gyp-getting-started/setup-prerequisites-installation/prerequisites-system-requirements) page for detailed hardware, OS, and software requirements.
+
+---
+
+## Step 1: Install node-gyp Globally
+
+Install the `node-gyp` CLI globally using npm to make it available across projects.
+
+```bash
+npm install -g node-gyp
+```
+
+> [!Note]
+> Make sure you have `npm` installed and updated. Use `npm -v` to check.
+
+---
+
+## Step 2: Set Up the Python Dependency
+
+### Supported Python Versions
+
+`node-gyp` requires Python versions compatible with your system and Node.js version. Refer to the official Python versions supported [here](https://devguide.python.org/versions/).
+
+### Configuring Python
+
+You can specify which Python executable `node-gyp` should use in several ways:
+
+1. **Command-line option:**
+
+   ```bash
+   node-gyp <command> --python /path/to/python
+   ```
+
+2. **Environment variable (npm):**
+
+   - Unix/macOS:
+     ```bash
+     export npm_config_python=/path/to/python
+     ```
+   - Windows CMD:
+     ```powershell
+     set npm_config_python=C:\path\to\python.exe
+     ```
+   - Windows PowerShell:
+     ```powershell
+     $Env:npm_config_python="C:\path\to\python.exe"
+     ```
+
+3. **Environment variable `PYTHON` or `NODE_GYP_FORCE_PYTHON`:**
+
+   Setting these environment variables will also direct `node-gyp` to your intended Python path.
+
+---
+
+## Step 3: Install System-Specific Build Tools
+
+### Unix/Linux
+
+- Install Python, `make`, and a compatible C/C++ compiler such as GCC.
+
+Example (Ubuntu/Debian):
+
+```bash
+sudo apt-get update
+sudo apt-get install -y python3 make g++
+```
+
+### macOS
+
+- Install Python
+- Install Xcode Command Line Tools by running:
+
+```bash
+xcode-select --install
+```
+
+Alternatively, if you have full Xcode installed, add the Command Line Tools via the menu under `Xcode -> Open Developer Tool -> More Developer Tools...`.
+
+### Windows
+
+#### Using Chocolatey (recommended)
+
+Install Python and Visual Studio C++ build tools with:
+
+```powershell
+choco install python visualstudio2022-workload-vctools -y
+```
+
+#### Manual Installation
+
+- Install Python from the [Microsoft Store](https://apps.microsoft.com/store/search?publisher=Python+Software+Foundation)
+- Install Visual Studio Community or Build Tools with the "Desktop development with C++" workload enabled
+
+> [!Tip]
+> Installing the PowerShell module [VSSetup](https://github.com/microsoft/vssetup.powershell) via `Install-Module VSSetup -Scope CurrentUser` improves Visual Studio detection for node-gyp.
+
+#### Notes for ARM64 Windows
+
+- Add "Visual C++ compilers and libraries for ARM64" and "Visual C++ ATL for ARM64" components.
+- Use Visual Studio 2022 version 17.4 or later for native ARM64 C++ compiler support.
+
+---
+
+## Step 4: Verify Installation
+
+After installing prerequisites and `node-gyp`, verify the setup:
+
+1. Run:
+
+```bash
+node-gyp --help
+```
+
+If the help output appears, `node-gyp` is installed correctly.
+
+2. Optionally, try generating project files in your native addon's root directory:
+
+```bash
+cd your_native_addon
+node-gyp configure
+```
+
+3. Then build:
+
+```bash
+node-gyp build
+```
+
+4. Check the `build/Release/` (or `build/Debug/`) directory for the compiled `.node` file.
+
+See the [Validating Your Setup](https://nodejs.org/api/node-gyp-getting-started/first-build-validation/validating-installation) guide for more.
+
+---
+
+## Common Pitfalls and How to Avoid Them
+
+### "Pre" Versions of Node Error
+
+If you see an error like:
+
+```
+Error: "pre" versions of node cannot be installed, use the --nodedir flag instead
+```
+
+This means `node-gyp` cannot find headers for development versions of Node.js with `-pre` suffixes. Fix this by specifying the `--nodedir` option pointing to your Node.js source directory:
+
+```bash
+node-gyp rebuild --nodedir=/path/to/node/source
+```
+
+Or configure npm globally:
+
+```bash
+npm config set nodedir /path/to/node/source
+```
+
+### Python Version Mismatch
+
+Make sure the Python version is supported. Use the explicit path method or environment variables to ensure the correct Python is used.
+
+### Visual Studio or Build Tools Not Found (Windows)
+
+Ensure Visual Studio or Build Tools are installed with the required workloads. Run the Visual Studio Installer to verify or modify workloads.
+
+Refer to the [Windows Visual Studio Setup](https://nodejs.org/api/node-gyp-getting-started/setup-prerequisites-installation/windows-visual-studio-setup) guide for detailed steps.
+
+---
+
+## Advanced Configuration and Environment Variables
+
+- Use `package.json` config keys prefixed with `node_gyp_` to specify node-gyp options. For example:
+
+```json
+{
+  "config": {
+    "node_gyp_devdir": "/tmp/.gyp"
+  }
+}
+```
+
+- Environment variables can also control behavior using `npm_package_config_node_gyp_OPTION_NAME`.
+
+- See the [README](https://github.com/nodejs/node-gyp#configuration) for full command option details.
+
+---
+
+## Example: Basic Installation and Setup Flow
+
+<Steps>
+<Step title="Install node-gyp Globally">
+Run `npm install -g node-gyp` to install the CLI.
+</Step>
+<Step title="Install system tools">
+Install Python and build tools specific to your OS as described.
+</Step>
+<Step title="Configure Python path">
+Export or set environment variables to point to your preferred Python executable.
+</Step>
+<Step title="Verify installation">
+Run `node-gyp configure` and `node-gyp build` commands inside your addon project.
+</Step>
+</Steps>
+
+---
+
+## Troubleshooting Tips
+
+- Always ensure your Python and compiler toolchain versions are compatible with your Node.js version.
+- When encountering permission errors during installs, consider running with appropriate privileges or using workarounds outlined in the installation error logs.
+- On Windows, the Visual Studio detection logic improves with the VSSetup PowerShell module.
+
+For specific error messages and fixes, consult the [Common Errors and How to Fix Them](https://nodejs.org/api/node-gyp-getting-started/troubleshooting-common-issues/common-errors-and-solutions) page.
+
+---
+
+## What's Next?
+
+After installing and configuring `node-gyp`, proceed to:
+
+- [Creating Your binding.gyp File](https://nodejs.org/api/node-gyp-getting-started/first-build-validation/creating-binding-gyp) to define your native addon build configuration.
+- [Running configure and build commands](https://nodejs.org/api/node-gyp-getting-started/first-build-validation/running-configure-build-commands) to compile your addon.
+- Validate the build and run tests.
+
+Explore further guides on [Integration with Environments](https://nodejs.org/api/node-gyp-overview/integration-with-environments) and [Troubleshooting Common Issues](https://nodejs.org/api/node-gyp-getting-started/troubleshooting-common-issues) to deepen your mastery.
+
+---
+
+## Additional Resources
+
+- [Node-gyp GitHub Repository](https://github.com/nodejs/node-gyp)
+- [Node.js Official Downloads and Versions](https://nodejs.org/en/about/releases/)
+- [Going Native Tutorial](http://nodeschool.io/#goingnative)
+- [Binding.gyp File Examples](https://github.com/nodejs/node-gyp/tree/main/docs)
+
+---

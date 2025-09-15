@@ -1,0 +1,210 @@
+---
+title: "Prerequisites & System Requirements"
+description: "Understand the core requirements—supported Node.js versions, Python, C/C++ toolchains, and OS-specific tools—needed to successfully install and run node-gyp. Get authoritative guidance on what needs to be present before proceeding."
+---
+
+# Prerequisites & System Requirements for node-gyp
+
+Welcome to the essential starting point for successfully installing and running `node-gyp`. This guide outlines the critical requirements and setup steps you need before diving into building native Node.js addons. Ensuring your environment is properly prepared will save time and reduce errors later in your development workflow.
+
+---
+
+## 1. Supported Node.js Versions
+
+`node-gyp` supports all current and LTS (Long Term Support) versions of Node.js. It is designed to work with stable release versions, not pre-release or "-pre" versions.
+
+> **Important:** Attempting to build native addons using pre-release versions of Node.js (those ending in `-pre`) results in errors because `node-gyp` cannot find matching header files for these builds.
+
+### How to check your Node.js version:
+
+```bash
+node -v
+```
+
+If you see a version like `v0.10.4-pre`, switch to a stable version such as `v0.10.4`.
+
+### Avoiding pre-release version errors
+
+If you must use a pre-release node version, specify the path to your Node.js source headers explicitly with the `--nodedir` flag:
+
+```bash
+node-gyp rebuild --nodedir=/path/to/node/source
+```
+
+Or, if running through `npm`:
+
+```bash
+npm install your-addon --nodedir=/path/to/node/source
+```
+
+For persistent setups, configure npm to always use your node source directory:
+
+```bash
+npm config set nodedir /path/to/node/source
+```
+
+<Note>
+Refer to [docs/Error-pre-versions-of-node-cannot-be-installed.md](./docs/Error-pre-versions-of-node-cannot-be-installed.md) for detailed troubleshooting on version issues.
+</Note>
+
+---
+
+## 2. Python Dependency
+
+`node-gyp` requires Python to generate native build files.
+
+### Supported Python versions
+
+- You must have a supported Python version installed on your system.
+- Compatible versions currently include Python 2.7 and Python 3.x, with a push towards Python 3 especially for recent `node-gyp` versions.
+- For Python >= 3.12, ensure your `node-gyp` version is at least version 10.
+
+### How `node-gyp` finds Python
+
+- Use the `--python` command-line option to specify the exact Python executable:
+
+  ```bash
+  node-gyp configure --python /path/to/python
+  ```
+
+- Alternatively, set the environment variable `npm_config_python` when used through npm:
+
+  ```bash
+  export npm_config_python=/path/to/python
+  ```
+
+  On Windows CMD:
+
+  ```cmd
+  set npm_config_python=C:\path\to\python.exe
+  ```
+
+  On PowerShell:
+
+  ```powershell
+  $Env:npm_config_python="C:\path\to\python.exe"
+  ```
+
+- You can also set the `PYTHON` or `NODE_GYP_FORCE_PYTHON` environment variables to the Python path.
+
+<Info>
+Consult the page [Configuring the Python Dependency](/getting-started/setup-prerequisites-installation/python-setup) for detailed setup instructions.
+</Info>
+
+---
+
+## 3. C/C++ Compiler Toolchain
+
+Native addons require compiling C/C++ code, so an appropriate compiler toolchain must be installed and configured.
+
+### On Unix/Linux
+
+- Install [GCC](https://gcc.gnu.org) or a compatible compiler.
+- Install `make` to process build instructions.
+
+### On macOS
+
+- Install the Xcode Command Line Tools. This installs `clang`, `clang++`, and `make`.
+- You can install these tools standalone by running:
+
+  ```bash
+  xcode-select --install
+  ```
+
+- Alternatively, use the full Xcode app with Command Line Tools installed via the menu `Xcode -> Open Developer Tools -> More Developer Tools...`.
+
+### On Windows
+
+Windows build requires several components:
+
+- **Python:** Installed as above.
+- **Visual Studio or Build Tools:**
+  - For Visual Studio 2019 or later, install the 'Desktop development with C++' workload from Visual Studio Community or professional editions.
+  - For older versions, install [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/).
+
+- **Optional: Chocolatey package manager** (recommended for quick setup):
+
+  ```powershell
+  choco install python visualstudio2022-workload-vctools -y
+  ```
+
+- **Specific notes:**
+  - To build for ARM64 on Windows ARM, include "Visual C++ compilers and libraries for ARM64" and "Visual C++ ATL for ARM64" components.
+  - Visual Studio 2022 version 17.4 or later is required for native ARM64 compilation.
+
+<Note>
+Visit [Microsoft's Node.js Guidelines for Windows](https://github.com/Microsoft/nodejs-guidelines/blob/master/windows-environment.md#compiling-native-addon-modules) for in-depth setup assistance.
+</Note>
+
+### Verify Compiler Setup
+
+- Ensure the compiler tools are reachable via your PATH.
+- Use your terminal to check version:
+
+  ```bash
+  gcc --version       # Unix/Linux/macOS
+  clang --version     # macOS
+  cl.exe              # Windows Developer Command Prompt
+  ```
+
+---
+
+## 4. Operating System Requirements
+
+Ensure your system meets these basic conditions:
+
+- Supported OS platforms: Unix/Linux, macOS, Windows.
+- Adequate memory and disk space for your build environment (usually minimal, but varies by project size).
+- Network connectivity to download Node.js headers and dependencies unless using offline tarballs.
+
+---
+
+## 5. Network and Proxy Settings
+
+If behind a proxy or strict firewall:
+
+- Configure proxy settings via `node-gyp` flags like `--proxy`, `--noproxy`.
+- Use environment variables such as `HTTP_PROXY` and `HTTPS_PROXY` if required.
+
+---
+
+## 6. Summary of Prerequisites
+
+| Requirement                   | Details                                                                                  |
+|------------------------------|------------------------------------------------------------------------------------------|
+| Node.js version              | Stable release version, not `-pre` development builds                                  |
+| Python                      | Supported version, explicit path via `--python` or environment variables recommended    |
+| Compiler tools (C/C++)       | GCC or compatible on Unix/macOS, Visual Studio on Windows                              |
+| OS                          | Unix/Linux, macOS, Windows                                                             |
+| Network                     | Internet access for headers download or local tarballs                                |
+
+---
+
+## Troubleshooting & Tips
+
+- **Pre-release Node version error:** Use the `--nodedir` flag to provide the source directory.
+- **Python not found:** Double-check the `--python` option or environment variables.
+- **Visual Studio detection fails on Windows:** Confirm installation of workload and consider installing the VSSetup PowerShell module for improved detection.
+- **Permissions issues:** Run your terminal with appropriate permissions to create directories and files.
+
+<Tip>
+When setting up Python or Visual Studio for the first time, restart your terminal or system to ensure environment variables are correctly applied.
+</Tip>
+
+---
+
+## Next Steps
+
+After confirming that your environment meets these prerequisites, proceed to:
+
+- [Installing node-gyp (All Platforms)](/getting-started/setup-prerequisites-installation/installation-all-platforms)
+- [Configuring the Python Dependency](/getting-started/setup-prerequisites-installation/python-setup)
+- [Windows: Visual Studio Setup](/getting-started/setup-prerequisites-installation/windows-visual-studio-setup)
+
+These guides will walk you through installing and configuring the tools you verified here, preparing you for your first native addon build.
+
+---
+
+For a broad overview of what node-gyp does and its place in your development workflow, see the [Product Overview](/overview/introduction-and-value/product-overview) and [Core Concepts & Architecture](/overview/core-concepts-and-architecture/component-architecture).
+
+# End of Prerequisites & System Requirements
