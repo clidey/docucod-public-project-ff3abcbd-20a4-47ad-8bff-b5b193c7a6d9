@@ -1,0 +1,187 @@
+---
+title: "Common Errors and How to Fix Them"
+description: "Explore solutions to frequently encountered setup and build errors—such as toolchain misconfiguration, Python version mismatches, and missing files—supplemented with targeted references for deeper troubleshooting."
+---
+
+# Common Errors and How to Fix Them
+
+Explore solutions to frequently encountered setup and build errors such as toolchain misconfiguration, Python version mismatches, and missing files. This guide provides targeted troubleshooting strategies and references for deeper problem resolution.
+
+---
+
+## 1. Toolchain Misconfiguration
+
+### Symptoms
+- Build fails with errors related to missing or incompatible compiler tools.
+- Errors indicating Visual Studio or MSBuild not found on Windows.
+- Make or Xcode build errors on Unix/macOS.
+
+### How to Fix
+1. **Validate Your Compiler Toolchain**
+   - On **Windows**, ensure Visual Studio or the required Build Tools are installed correctly.
+     - Double-check that the necessary workloads (such as `Desktop development with C++`) are selected.
+     - Verify you have a supported MSVS version (2015 or newer).
+     - See [Windows Visual Studio Setup](../getting-started/setup-prerequisites-installation/windows-visual-studio-setup) for detailed instructions.
+
+   - On **Unix/macOS**, confirm you have installed Xcode Command Line Tools or system build essentials.
+     - Run `xcode-select --install` on macOS.
+     - Install `build-essential` package on Debian/Ubuntu.
+
+2. **Check Environment Variables and Flags**
+   - Verify environment variables like `MSVS_VERSION` or command-line options to specify your toolchain version.
+   - Use `--msvs-version` flag on node-gyp configure if needed.
+
+3. **Troubleshooting**
+
+<AccordionGroup title="Common Toolchain Issues">
+<Accordion title="Visual Studio Not Found on Windows">
+- Verify Visual Studio installation path.
+- Run `node-gyp configure --msvs-version=2017` (or your installed version).
+- Check Visual Studio Build Tools installation.
+- Ensure `GYP_MSVS_VERSION` and `GYP_MSVS_OVERRIDE_PATH` environment variables are unset or correctly set.
+</Accordion>
+<Accordion title="Missing Make or Build Tools on Unix/macOS">
+- Confirm that `make` and `g++` are installed and accessible in your `$PATH`.
+- On macOS, install Command Line Tools: `xcode-select --install`.
+- On Linux, install appropriate developer packages.
+</Accordion>
+</AccordionGroup>
+
+---
+
+## 2. Python Version Mismatches
+
+### Symptoms
+- Errors about Python not found or incompatible Python version.
+- Build fails complaining about Python 2 vs Python 3 incompatibility.
+
+### How to Fix
+1. **Install Supported Python Version**
+   - node-gyp supports Python 2.7 or Python 3 (usually >= 3.6) depending on Node.js version.
+   - Install Python from the official site or your package manager.
+
+2. **Specify Python Executable Explicitly**
+   - Use the environment variable:
+
+   ```bash
+   export PYTHON=/path/to/python
+   ```
+
+   - Or provide the Python path with node-gyp:
+
+   ```bash
+   node-gyp configure --python /path/to/python
+   ```
+
+3. **Troubleshooting**
+
+<Note>
+Node-gyp automatically detects Python using heuristics but may fail if multiple Python versions are installed. Ensure your `PATH` prioritizes the supported version.
+</Note>
+
+<Accordion title="Common Python Issues">
+<Accordion title="Python Not Found">
+- Verify `python` or `python3` command runs without error.
+- Set the `PYTHON` environment variable.
+</Accordion>
+<Accordion title="Unsupported Python Version">
+- Confirm that your Python version matches supported versions for your Node.js release.
+</Accordion>
+</Accordion>
+
+---
+
+## 3. Missing or Incorrect Files
+
+### Symptoms
+- Errors during `configure` or `build` indicating missing header files like `common.gypi` or `config.gypi`.
+- Build scripts reporting 'file not found' errors.
+
+### How to Fix
+1. **Verify Node.js Development Files**
+   - If using `--nodedir` or `--dist-url`, make sure the path points to a complete Node.js source or header download.
+   - node-gyp downloads headers automatically unless overridden.
+
+2. **Inspect Your `binding.gyp` and Build Directory**
+   - Confirm `binding.gyp` is correctly placed at your project root.
+   - If you see errors about missing `common.gypi`, check if your Node.js version headers are installed correctly.
+
+3. **Force Reinstallation of Headers**
+   - Use:
+
+   ```bash
+   node-gyp install --force
+   ```
+
+   - Or remove the `~/.node-gyp` directory manually to clear cached headers.
+
+4. **Troubleshooting**
+
+<Warning>
+If an invalid or incomplete `nodedir` is specified, node-gyp falls back to the system `process.config`, which might not match your addon build requirements—causing subtle build errors.
+</Warning>
+
+---
+
+## 4. Frequently Seen Error Examples & Solutions
+
+| Error Message                                  | Cause                                                    | Solution                                                  |
+|-----------------------------------------------|----------------------------------------------------------|-----------------------------------------------------------|
+| `MSBuild not found`                            | Visual Studio missing or misconfigured on Windows        | Install Visual Studio Build Tools; verify `msvs-version`  |
+| `Python executable not found`                  | Python missing or path not set                            | Install Python; set `PYTHON` env variable or flag          |
+| `cannot find common.gypi`                      | Missing Node.js headers or incorrect `nodedir`           | Check `nodedir`; reinstall headers with `node-gyp install` |
+| `ERR! conf error Error: Invalid version number` | Unsupported or malformed Node.js target version          | Use valid `--target` or install compatible Node version    |
+
+---
+
+## 5. Additional Tips and Best Practices
+
+- Always keep your development environment consistent:
+
+  - Use the Node.js version your addon targets.
+  - Maintain a compatible Python version.
+  - Use supported toolchain versions as specified in prerequisites.
+
+- Use verbose logging to gain insights:
+
+  ```bash
+  node-gyp rebuild --verbose
+  ```
+
+- Consult the [Validating and Repairing Your Development Environment](../getting-started/troubleshooting-common-issues/validating-environment) guide for comprehensive environment checks.
+
+---
+
+## 6. Where to Get More Help
+
+- Check out the [FAQ Troubleshooting Section](../../faq/troubleshooting-common-questions) for answers on Python detection, Visual Studio setup, and header downloads.
+- Participate in community forums or open issues on the [node-gyp GitHub repository](https://github.com/nodejs/node-gyp).
+
+---
+
+For in-depth understanding of configuration management and header handling, see the [Configure Command Overview](../getting-started/first-build-validation/running-configure-build-commands) and the architecture documentation.
+
+
+---
+
+## Appendix: Underlying Cause References
+
+These common errors often arise from the following documented implementation details:
+
+- **Node Directory and Header Location**
+  - If `--nodedir` is provided, node-gyp uses this path for development headers like `common.gypi`.
+  - When `process.config.variables.use_prefix_to_find_headers` is true, node-gyp attempts to find headers in a prefix specified at build time.
+  - Mismatches in Node versions between the headers and target cause configuration to fail.
+
+- **Python and Environment Variables**
+  - Environment variables prefixed with `npm_config_` or `npm_package_config_node_gyp_` can influence node-gyp options.
+  - The `PYTHON` env variable or `--python` flag sets the explicit Python executable.
+
+- **Visual Studio Detection**
+  - On Windows, node-gyp detects Visual Studio versions and MSBuild paths.
+  - Unsupported or missing Visual Studio toolsets cause project file generation to fail.
+
+
+This guide aims to equip you with direct, practical fixes for these obstacles to get your native addon builds running smoothly.
+
+---
