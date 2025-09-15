@@ -1,0 +1,232 @@
+---
+title: "Linking and Managing Native Dependencies"
+description: "Explains how to work with native dependencies like OpenSSL, and how to resolve linking errors. Helps users confidently include native libraries and external dependencies in their build process."
+---
+
+# Linking and Managing Native Dependencies
+
+This guide helps you confidently include and manage native dependencies such as OpenSSL and other external native libraries in your Node.js native addon projects using `node-gyp`. It explains best practices for linking, common linking issues, and demonstrates how to resolve errors related to native dependencies during the build process.
+
+---
+
+## 1. Why Linking Native Dependencies Matters
+
+Native addons often rely on external libraries like OpenSSL, libuv, or other C/C++ libraries. Properly linking these dependencies ensures your addon:
+
+- **Builds successfully** across all supported platforms
+- Uses the correct library versions and headers
+- Avoids runtime errors related to missing symbols or incompatible binaries
+
+Without proper linking, you might encounter missing header files, unresolved external symbols, or incorrect runtime behavior.
+
+---
+
+## 2. Understanding Linking with `binding.gyp`
+
+The `binding.gyp` file controls how `node-gyp` configures your build, including how native dependencies are linked.
+
+### Key sections related to linking:
+
+- **`libraries`** - Specifies native libraries for the linker
+- **`include_dirs`** - Specifies folders with header files needed to compile your addon
+- **`conditions`** - Allows platform-specific overrides (e.g., Windows vs Unix)
+
+### Example: Linking OpenSSL on Unix-like systems
+
+```python
+{
+  'variables': {
+    'node_shared_openssl%': 'true'
+  },
+  'targets': [
+    {
+      'target_name': 'binding',
+      'sources': [ 'src/binding.cc' ],
+      'conditions': [
+        ['node_shared_openssl=="false"', {
+          'include_dirs': [
+            '<(node_root_dir)/deps/openssl/openssl/include'
+          ],
+          'conditions': [
+            ['target_arch=="ia32"', {
+              'include_dirs': [ '<(node_root_dir)/deps/openssl/config/piii' ]
+            }],
+            ['target_arch=="x64"', {
+              'include_dirs': [ '<(node_root_dir)/deps/openssl/config/k8' ]
+            }],
+            ['target_arch=="arm"', {
+              'include_dirs': [ '<(node_root_dir)/deps/openssl/config/arm' ]
+            }]
+          ]
+        }]
+      ]
+    }
+  ]
+}
+```
+
+This snippet shows how to conditionally include OpenSSL headers packaged with Node.js when it is statically linked.
+
+---
+
+## 3. Best Practices for Linking Native Dependencies
+
+- **Use variables and conditions wisely:** Leverage `<(node_root_dir)` and `target_arch` variables to accommodate different platforms and architectures.
+
+- **Separate platform-specific logic:** Use `conditions` blocks in `binding.gyp` to differentiate Unix and Windows linking needs.
+
+- **Include all required headers and libraries:** Verify all native libraries and include directories are explicitly set to avoid missing symbols at compile and link time.
+
+- **Provide overrides:** Allow users to customize paths to dependencies via command line or environment variables.
+
+- **Avoid hard-coding paths where possible:** Use environment variables or build variables instead, improving portability.
+
+---
+
+## 4. Handling Linking on Windows
+
+Windows requires special handling because native dependencies like OpenSSL may not be bundled and are typically linked differently.
+
+### Example: Linking OpenSSL on Windows
+
+```python
+[ 'OS=="win"', {
+  'conditions': [
+    ['target_arch=="x64"', {
+      'variables': { 'openssl_root%': 'C:/OpenSSL-Win64' }
+    }, {
+      'variables': { 'openssl_root%': 'C:/OpenSSL-Win32' }
+    }],
+  ],
+  'libraries': [
+    '-l<(openssl_root)/lib/libeay32.lib'
+  ],
+  'include_dirs': [
+    '<(openssl_root)/include'
+  ]
+}]
+```
+
+#### Guidance for Windows Users:
+
+- Ensure OpenSSL is installed in the specified directory, matching your build architecture (x64 or x86).
+
+- Direct users to reliable OpenSSL installers like [https://slproweb.com/products/Win32OpenSSL.html](https://slproweb.com/products/Win32OpenSSL.html).
+
+- Allow overrides via `--openssl-root` flag during build:
+
+```bash
+node-gyp rebuild --openssl-root="C:\path\to\openssl"
+```
+
+---
+
+## 5. Troubleshooting Common Linking Errors
+
+### 5.1 Missing Header Files
+
+**Symptom:** Build fails with errors like `fatal error: openssl/ssl.h: No such file or directory`.
+
+**Fix:**
+
+- Check `include_dirs` in your `binding.gyp` includes the correct path to OpenSSL headers.
+- Confirm OpenSSL (or other dependencies) is installed and accessible.
+- On Windows, verify your `openssl_root` path is correct and matches architecture.
+
+### 5.2 Unresolved External Symbols / Missing Libraries
+
+**Symptom:** Link time errors about missing functions.
+
+**Fix:**
+
+- Verify `libraries` section in `binding.gyp` correctly points to the native libraries, e.g., OpenSSL's `libeay32.lib`.
+- Confirm that the linker sees these libraries (paths must be accurate).
+- Make sure build architecture matches library architecture (x64 vs x86).
+
+### 5.3 Conflicting OpenSSL Versions
+
+**Symptom:** Runtime crashes or undefined behavior.
+
+**Fix:**
+
+- Confirm your module links to the same OpenSSL version Node.js uses.
+- Use the bundled Node.js OpenSSL headers if `node_shared_openssl` is `false`.
+- Avoid mixing different OpenSSL builds.
+
+---
+
+## 6. Examples
+
+### Example 1: Minimal `binding.gyp` with OpenSSL Linking on Unix
+
+```python
+{
+  'targets': [
+    {
+      'target_name': 'myaddon',
+      'sources': [ 'src/addon.cc' ],
+      'include_dirs': [ '<(node_root_dir)/deps/openssl/openssl/include' ],
+      'libraries': [ '-lssl', '-lcrypto' ]
+    }
+  ]
+}
+```
+
+### Example 2: Conditional Linking in `binding.gyp` for Cross-Platform
+
+```python
+{
+  'targets': [
+    {
+      'target_name': 'myaddon',
+      'sources': [ 'src/addon.cc' ],
+      'conditions': [
+        ['OS=="win"', {
+          'variables': { 'openssl_root%': 'C:/OpenSSL-Win64' },
+          'libraries': [ '-l<(openssl_root)/lib/libeay32.lib' ],
+          'include_dirs': [ '<(openssl_root)/include' ]
+        }, {
+          'libraries': [ '-lssl', '-lcrypto' ],
+          'include_dirs': [ '/usr/local/opt/openssl/include' ]
+        }]
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## 7. Additional Tips
+
+- **Refer to real-world `binding.gyp` files** to see how existing addons manage native dependencies. See the [binding.gyp files in the wild](https://github.com/nodejs/node-gyp/blob/main/docs/binding.gyp-files-in-the-wild.md) page.
+
+- **Run `node-gyp configure` first** to verify your build setup before building.
+
+- **Use `--verbose` flag** to get detailed build logs helpful for diagnosing linking problems:
+
+```bash
+node-gyp rebuild --verbose
+```
+
+- On Windows, install the Visual C++ Build Tools and Python prerequisites as per the [Windows Visual Studio Setup](https://nodejs.org/en/docs/guides/getting-started/) documentation.
+
+---
+
+## 8. Next Steps & Related Documentation
+
+- **Creating Your binding.gyp File:** Learn how to author and structure your `binding.gyp` file properly. [Creating Your binding.gyp File](../getting-started/first-build-validation/creating-binding-gyp)
+
+- **Integration with Build Environments:** Understand environment variables and configuring Python and toolchains. [Integration with Environments](../overview/integration-and-ecosystem/integration-with-environments)
+
+- **Troubleshooting Common Build Errors:** For resolving issues during linking or compilation. [Troubleshooting Common Build Errors](../guides/real-world-scenarios/common-errors-troubleshooting)
+
+- **Linking to OpenSSL in Depth:** Explore platform-specific challenges and advanced configurations. [Linking to OpenSSL](../docs/Linking-to-OpenSSL.md)
+
+- **Cross-platform Builds:** Best practices for building native addons on Windows, macOS, and Linux. [Cross-platform Builds](../guides/real-world-scenarios/cross-platform-builds)
+
+---
+
+<Info>
+Properly linking native dependencies ensures your Node.js addons are robust, portable, and maintainable. Align your `binding.gyp` configurations carefully with your target platforms and dependencies to avoid common pitfalls.
+</Info>
