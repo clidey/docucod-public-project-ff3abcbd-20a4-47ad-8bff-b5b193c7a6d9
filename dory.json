@@ -1,0 +1,153 @@
+{
+  "background": {
+    "decoration": "gradient"
+  },
+  "colors": {
+    "dark": "#1E3A8A",
+    "light": "#60A5FA",
+    "primary": "#60A5FA"
+  },
+  "favicon": "/favicon.svg",
+  "fonts": {
+    "family": "Montserrat",
+    "format": "woff2",
+    "source": "https://fonts.gstatic.com/s/googlesansflex/v5/t5sJIQcYNIWbFgDgAAzZ34auoVyXkJCOvp3SFWJbN5hF8Ju1x6sKCyp0l9sI40swNJwGpVd4AZzz0v6lJ4qFXNZhGjLvDSkV4USKMo6qQzwliVdHAy9jxTDHg_ugnAakpwGc-cxgUqDCIUI.woff2"
+  },
+  "icons": {
+    "library": "fontawesome"
+  },
+  "logo": {
+    "dark": "./logo/logo.svg",
+    "light": "./logo/logo.svg"
+  },
+  "name": "node-gyp",
+  "navigation": {
+    "tabs": [
+      {
+        "groups": [
+          {
+            "group": "Product Introduction \u0026 Value",
+            "pages": [
+              "overview/introduction-and-value/product-overview",
+              "overview/introduction-and-value/target-audience-use-cases",
+              "overview/introduction-and-value/core-features-quick-overview"
+            ]
+          },
+          {
+            "group": "Core Concepts \u0026 Architecture",
+            "pages": [
+              "overview/core-concepts-and-architecture/component-architecture",
+              "overview/core-concepts-and-architecture/key-terms-glossary",
+              "overview/core-concepts-and-architecture/supported-workflows"
+            ]
+          },
+          {
+            "group": "Integration \u0026 Ecosystem",
+            "pages": [
+              "overview/integration-and-ecosystem/integration-with-environments",
+              "overview/integration-and-ecosystem/addon-configs-and-examples"
+            ]
+          }
+        ],
+        "tab": "Overview"
+      },
+      {
+        "groups": [
+          {
+            "group": "Setup \u0026 Installation",
+            "pages": [
+              "getting-started/setup-prerequisites-installation/prerequisites-system-requirements",
+              "getting-started/setup-prerequisites-installation/installation-all-platforms",
+              "getting-started/setup-prerequisites-installation/python-setup",
+              "getting-started/setup-prerequisites-installation/windows-visual-studio-setup"
+            ]
+          },
+          {
+            "group": "First Build \u0026 Validation",
+            "pages": [
+              "getting-started/first-build-validation/creating-binding-gyp",
+              "getting-started/first-build-validation/running-configure-build-commands",
+              "getting-started/first-build-validation/validating-installation"
+            ]
+          },
+          {
+            "group": "Troubleshooting Common Issues",
+            "pages": [
+              "getting-started/troubleshooting-common-issues/common-errors-and-solutions",
+              "getting-started/troubleshooting-common-issues/validating-environment"
+            ]
+          }
+        ],
+        "tab": "Getting Started"
+      },
+      {
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "guides/getting-started/installing-and-setting-up",
+              "guides/getting-started/first-build-workflow",
+              "guides/getting-started/binding-gyp-basics"
+            ]
+          },
+          {
+            "group": "Real-World Scenarios and Advanced Workflows",
+            "pages": [
+              "guides/real-world-scenarios/working-with-node-versions",
+              "guides/real-world-scenarios/cross-platform-builds",
+              "guides/real-world-scenarios/common-errors-troubleshooting"
+            ]
+          },
+          {
+            "group": "Integration \u0026 Best Practices",
+            "pages": [
+              "guides/integration-best-practices/ci-automation",
+              "guides/integration-best-practices/native-dependencies-linking",
+              "guides/integration-best-practices/optimizing-build-performance"
+            ]
+          }
+        ],
+        "tab": "Guides"
+      },
+      {
+        "groups": [
+          {
+            "group": "Getting Started \u0026 Common Questions",
+            "pages": [
+              "faq/common-questions/required-tools",
+              "faq/common-questions/binding-gyp-file",
+              "faq/common-questions/supported-node-versions"
+            ]
+          },
+          {
+            "group": "Troubleshooting \u0026 Error Solutions",
+            "pages": [
+              "faq/troubleshooting/python-not-found",
+              "faq/troubleshooting/visual-studio-not-found",
+              "faq/troubleshooting/header-download-fails",
+              "faq/troubleshooting/debug-release-builds"
+            ]
+          },
+          {
+            "group": "Performance \u0026 Advanced Topics",
+            "pages": [
+              "faq/performance-optimization/parallel-builds",
+              "faq/performance-optimization/custom-toolchain-flags"
+            ]
+          },
+          {
+            "group": "Support \u0026 Community Resources",
+            "pages": [
+              "faq/support-community/where-to-get-help"
+            ]
+          }
+        ],
+        "tab": "FAQ"
+      }
+    ]
+  },
+  "styling": {
+    "codeblocks": "dark",
+    "eyebrows": "breadcrumbs"
+  }
+}
