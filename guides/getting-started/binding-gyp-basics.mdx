@@ -1,0 +1,219 @@
+---
+title: "Writing Your First binding.gyp File"
+description: "Understand the purpose and structure of binding.gyp files, including minimal working examples and best practices for specifying sources and targets. Enables users to craft and maintain their addon configuration with confidence."
+---
+
+# Writing Your First binding.gyp File
+
+Welcome to this guide designed to help you write and understand your first `binding.gyp` file, the essential configuration for building native Node.js addons with `node-gyp`. Here, you will learn what a `binding.gyp` file is, how to create a minimal valid file, specify targets and sources, and apply best practices to maintain and customize your addon build configuration confidently.
+
+---
+
+## Overview
+
+### What is a binding.gyp File?
+
+The `binding.gyp` file is a JSON-like configuration file that defines how `node-gyp` generates platform-specific build files for your native addon. It specifies what source files to compile, target names for your module, and other build parameters. Think of it as the instruction manual for `node-gyp` to transform your C/C++ source code into native Node.js-compatible binaries.
+
+### Why It's Important
+
+Without a properly configured `binding.gyp` file, `node-gyp` cannot generate the Makefile or Visual Studio project files needed to compile your addon. This file sits in the root directory of your addon project and directs `node-gyp` through the build process.
+
+---
+
+## Prerequisites
+
+Before creating your `binding.gyp` file:
+
+- Have your addon source code ready, typically C or C++ files with `.cc` or `.cpp` extensions.
+- Install `node-gyp` globally or locally in your development environment.
+- Ensure system prerequisites such as Python and relevant compiler toolchains are installed (see [Prerequisites & System Requirements](../getting-started/setup-prerequisites-installation/prerequisites-system-requirements)).
+
+---
+
+## Structure of a Minimal binding.gyp File
+
+Your `binding.gyp` file should be placed next to your `package.json` at the root of your addon project. The minimal configuration follows this general structure:
+
+```json
+{
+  "targets": [
+    {
+      "target_name": "binding",
+      "sources": [ "src/binding.cc" ]
+    }
+  ]
+}
+```
+
+### Explanation:
+
+- `targets`: An array where you define one or more build targets.
+- `target_name`: The name of the compiled module that Node.js will require.
+- `sources`: An array of source file paths relative to the `binding.gyp` file.
+
+### Example:
+
+Imagine your project has a source file `src/myaddon.cc`, a basic `binding.gyp` would look like:
+
+```json
+{
+  "targets": [
+    {
+      "target_name": "myaddon",
+      "sources": [ "src/myaddon.cc" ]
+    }
+  ]
+}
+```
+
+This tells `node-gyp` to compile `src/myaddon.cc` into a native module named `myaddon`.
+
+---
+
+## Step-by-Step: Creating Your First binding.gyp File
+
+<Steps>
+<Step title="Create the binding.gyp File in Your Project Root">
+Open your addon project directory and create a new file named `binding.gyp` without any extension.
+</Step>
+<Step title="Define Build Targets and Sources">
+Add the minimum JSON structure specifying your target and source files as shown above. Ensure your source paths are correct and relative to `binding.gyp`.
+</Step>
+<Step title="Save and Verify Format">
+Make sure the syntax is valid JSON-like format (quotes around keys and strings, commas properly placed).
+</Step>
+<Step title="Run node-gyp Configure">
+From the project root, run `node-gyp configure` to generate platform-specific build files with your `binding.gyp` as input.
+</Step>
+<Step title="Build Your Addon">
+Run `node-gyp build` to compile your source code into a `.node` addon binary.
+</Step>
+</Steps>
+
+
+---
+
+## Important Elements You Can Specify in binding.gyp
+
+While the minimal config suffices for simple addons, here are some common extras you may include:
+
+- **include_dirs**: Specify additional directories to search for header files.
+- **libraries**: Link to external static or shared libraries.
+- **defines**: Add preprocessor macros.
+- **cflags/cflags_cc**: Additional compiler flags for C/C++.
+- **conditions**: Platform-specific or configuration conditions to customize builds.
+
+Example with an include directory and macro:
+
+```json
+{
+  "targets": [
+    {
+      "target_name": "myaddon",
+      "sources": [ "src/myaddon.cc" ],
+      "include_dirs": [ "<(node_root_dir)/src" ],
+      "defines": [ "MY_DEFINE=1" ]
+    }
+  ]
+}
+```
+
+This adds an include path (using `<(node_root_dir)>` placeholder) and defines a macro `MY_DEFINE`.
+
+---
+
+## Best Practices
+
+- **Keep it Simple First:** Start with a minimal `binding.gyp` and add complexity as needed.
+- **Use Relative Paths:** Always specify source and include paths relative to the project root.
+- **Avoid Trailing Commas:** JSON-like syntax does not allow trailing commas.
+- **Validate File Paths:** Make sure all files listed exist to prevent configuration errors.
+- **Manage Platform Differences:** Use `conditions` to handle differences for Windows, macOS, Linux.
+
+---
+
+## What Happens When You Run node-gyp
+
+1. `node-gyp configure` reads your `binding.gyp`, processes the targets and creates a platform-specific build file (Makefile, Visual Studio Project).
+2. `node-gyp build` invokes the respective build tool to compile your sources into a `.node` binary.
+3. The resulting addon is placed in `build/Release` or `build/Debug` depending on build mode.
+
+---
+
+## Common Pitfalls and Troubleshooting
+
+<AccordionGroup title="Common binding.gyp Issues">
+<Accordion title="Syntax Errors">
+Ensure your `binding.gyp` file is valid JSON-like format: use double quotes properly, commas between array elements, and no trailing commas.
+</Accordion>
+<Accordion title="Incorrect Source Paths">
+All paths must be correct relative to the `binding.gyp` location. Misspelled or missing source files cause configure/build failures.
+</Accordion>
+<Accordion title="Forgetting the binding.gyp File">
+If no `binding.gyp` is found in current directory when you run `node-gyp configure`, the process will fail. Always create this file.
+</Accordion>
+<Accordion title="Platform Specific Settings Misapplied">
+Use conditional blocks in the config to specify platform-specific flags to avoid build errors on different OSes.
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Advanced: Using Conditions for Cross-Platform Builds
+
+You can add conditions to your `binding.gyp` to apply different compiler flags or settings based on the OS or build type.
+
+Example:
+
+```json
+{
+  "targets": [
+    {
+      "target_name": "myaddon",
+      "sources": [ "src/myaddon.cc" ],
+      "conditions": [
+        [ "OS=='win'", {
+          "defines": ["WINDOWS_BUILD"]
+        }],
+        [ "OS=='mac' or OS=='linux'", {
+          "defines": ["POSIX_BUILD"]
+        }]
+      ]
+    }
+  ]
+}
+```
+
+This example sets different preprocessor defines depending on the operating system, ensuring compatibility.
+
+---
+
+## Visualizing the Workflow
+
+```mermaid
+flowchart TD
+  A[Create binding.gyp file in project root]
+  B[Run `node-gyp configure`]
+  C[Generate platform-specific build files]
+  D[Run `node-gyp build`]
+  E[Compile source to native addon (.node)]
+  F[Addon ready for use in Node.js]
+
+  A --> B --> C --> D --> E --> F
+```
+
+---
+
+## Additional Resources
+
+- [Node-gyp README](https://github.com/nodejs/node-gyp/blob/main/README.md) – Official repository and primary reference
+- [binding.gyp examples in the wild](../docs/binding.gyp-files-in-the-wild.md) – Real-world `binding.gyp` files from popular modules
+- [GYP User Documentation](../gyp/docs/UserDocumentation.md) – Advanced configuration and language features of GYP
+- [Common Errors and Solutions](../getting-started/troubleshooting-common-issues/common-errors-and-solutions.md) – For troubleshooting your builds
+
+---
+
+By mastering the `binding.gyp` file, you unlock the ability to build efficient, cross-platform native addons that integrate seamlessly with Node.js. Start simple, iterate your config, and grow your build expertise.
+
+Happy coding!
